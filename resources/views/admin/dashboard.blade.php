@@ -9,4 +9,11 @@
 
 {{-- Main dashboard content section --}}
 @section('content')
+
+
+<x-map />
+
+
+
+
 @endsection
