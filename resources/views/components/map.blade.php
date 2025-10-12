@@ -1,6 +1,6 @@
-<div class="flex items-center justify-center h-screen bg-slate-50 font-sans">
+<div class="flex items-center justify-center font-sans">
 
-  <main class="flex flex-col items-center justify-center">
+
     <div id="map" class="relative">
       <!-- Controls -->
       <div class="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2">
@@ -37,7 +37,7 @@
         </div>
       </div>
     </div>
-  </main>
+
 
   <script>
     const MAPTILER_KEY = "{{ env('MAPTILER_KEY') }}"; // Đặt key của bạn ở đây

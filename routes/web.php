@@ -6,6 +6,7 @@ use App\Http\Controllers\User\UserDashboard;
 use App\Http\Controllers\Admin\AdminDashboard;
 use App\Http\Middleware\IsAdmin;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\Admin\AlertController;
 
 
 Route::get('/', [UserDashboard::class, 'index'])->name('home');
@@ -22,6 +23,10 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware(['auth', IsAdmin::class])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminDashboard::class, 'index'])->name('dashboard');
+
+    Route::get('/alerts', [AlertController::class, 'index'])->name('alerts.index');
+    Route::get('/alerts/create', [AlertController::class, 'create'])->name('alerts.create');
+    Route::post('/alerts', [AlertController::class, 'store'])->name('alerts.store');
 });
 
 require __DIR__.'/auth.php';
