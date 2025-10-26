@@ -11,7 +11,7 @@
 
         <!-- Bản đồ chính -->
         <div class="h-[500px] mb-6">
-            <x-map-view :locations="$addresses" :zoom="7" />
+            <x-map-view :locations="$addresses" :zoom="7" markerType="address"/>
         </div>
 
         <!-- Nút thêm địa chỉ -->

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Alert;
 use App\Http\Resources\AlertResource;
+use App\Http\Resources\AddressResource;
 use App\Models\Address;
 use Illuminate\Support\Facades\Auth;
 
@@ -16,8 +17,17 @@ class AlertController extends Controller
 {
     public function index()
     {
-        $alerts = AlertResource::collection(Alert::all());
-        return view('admin.alerts.index', ['alerts' => $alerts]);
+        $alerts = AlertResource::collection(
+            Alert::with('address')
+                ->whereIn('type', ['flood','fire','storm','earthquake'])
+                ->whereIn('severity', ['low','medium','high','critical'])
+                ->get()
+        );
+
+        //dd($alerts);
+        return view('admin.alerts.index', [
+            'alerts' => $alerts,
+        ]);
     }
 
     public function create()

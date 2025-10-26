@@ -12,10 +12,11 @@ class AlertResource extends JsonResource
      *
      * @return array<string, mixed>
      */
-    public function toArray(Request $request): array
+    public function toArray($request): array
     {
         return [
-            'title'=>$this->title,
+            'id' => $this->id,
+            'title' => $this->title,
             'description' => $this->description,
             'type' => $this->type,
             'severity' => $this->severity,
@@ -23,6 +24,12 @@ class AlertResource extends JsonResource
             'created_by' => $this->created_by,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
+            'address' => $this->address ? [
+                'id' => $this->address->id,
+                'formatted_address' => $this->address->formatted_address,
+                'latitude' => $this->address->latitude,
+                'longitude' => $this->address->longitude,
+            ] : null,
         ];
     }
 }

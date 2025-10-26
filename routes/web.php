@@ -8,6 +8,7 @@ use App\Http\Middleware\IsAdmin;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Admin\AlertController;
 use App\Http\Controllers\User\AddressController;
+use App\Http\Controllers\User\AlertUserController;
 
 
 Route::get('/', [UserDashboard::class, 'index'])->name('home');
@@ -25,6 +26,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/addresses/create',[AddressController::class, 'createAddressForUser'])->name('addresses.create');
     Route::post('/addresses', [AddressController::class, 'storeAddressForUser'])->name('addresses.store');
     Route::delete('/addresses/{id}', [AddressController::class, 'destroy'])->name('addresses.destroy');
+
+    Route::get('/alerts', [AlertUserController::class, 'index'])->name('alerts.index');
 });
 
 Route::middleware(['auth', IsAdmin::class])->prefix('admin')->name('admin.')->group(function () {

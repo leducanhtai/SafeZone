@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Address;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
+use App\Http\Resources\AddressResource;
 
 class AddressController extends Controller
 {
@@ -14,7 +15,7 @@ class AddressController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $addresses = $user->addresses;
+        $addresses = AddressResource::collection($user->addresses);
         return view('user.addresses.index', ['addresses' => $addresses]);
     }
     public function createAddressForUser()

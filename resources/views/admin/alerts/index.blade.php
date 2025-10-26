@@ -9,7 +9,14 @@
 
 {{-- Main dashboard content section --}}
 @section('content')
-    <div class="max-w-7xl mx-auto py-8 px-2 sm:px-4 bg-gray-900 min-h-screen text-white">
+<div class="max-w-7xl mx-auto py-10 sm:px-6">
+
+        <!-- Bản đồ chính -->
+        <div class="h-[500px] mb-6">
+            <x-map-alert :alerts="$alerts" :zoom="7"/>
+        </div>
+</div>
+    <div class="max-w-7xl mx-auto py-10 px-2 sm:px-6 bg-gray-900 min-h-screen text-white">
     <div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <!-- Add Alert -->
         <a href="{{ route('admin.alerts.create') }}" 
