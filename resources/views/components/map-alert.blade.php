@@ -58,32 +58,79 @@
             else if (alert.severity === 'critical') iconUrl = `${base}/storm-red.png`;
         }
 
-        // Tạo element marker
         const el = document.createElement('div');
-        el.style.width = '60px';
-        el.style.height = '60px';
-        el.style.backgroundImage = `url(${iconUrl})`;
-        el.style.backgroundSize = 'contain';
-        el.style.backgroundRepeat = 'no-repeat';
-        el.style.backgroundPosition = 'center';
-        el.style.display = 'block';
-        el.style.cursor = 'pointer';
+    el.style.width = '60px';
+    el.style.height = '60px';
+    el.style.backgroundImage = `url(${iconUrl})`;
+    el.style.backgroundSize = 'contain';
+    el.style.backgroundRepeat = 'no-repeat';
+    el.style.backgroundPosition = 'center';
+    el.style.display = 'block';
+    el.style.cursor = 'pointer';
 
-        new maplibregl.Marker({ element: el })
-            .setLngLat([alert.address.longitude, alert.address.latitude])
-            .setPopup(
-                new maplibregl.Popup({ offset: 25 })
-                    .setHTML(`<strong>${alert.title}</strong><br>${alert.address.formatted_address}`)
-            )
-            .addTo(map);
+    const lng = parseFloat(alert.address.longitude);
+    const lat = parseFloat(alert.address.latitude);
+
+    new maplibregl.Marker({ element: el })
+        .setLngLat([lng, lat])
+        .setPopup(
+            new maplibregl.Popup({ offset: 25 })
+                .setHTML(`<strong>${alert.title}</strong><br>${alert.address.formatted_address}`)
+        )
+        .addTo(map);
+
+    // =============== Vẽ vùng cảnh báo ===============
+
+    let radius = 500;
+    if (alert.severity === 'medium') radius = 800;
+    else if (alert.severity === 'high') radius = 1500;
+    else if (alert.severity === 'critical') radius = 2500;
+
+    const circle = turf.circle([lng, lat], radius / 1000, { steps: 64, units: 'kilometers' });
+
+    const sourceId = `alert-circle-${alert.id}`;
+    const layerId = `alert-circle-layer-${alert.id}`;
+
+    map.on('load', () => {
+        if (!map.getSource(sourceId)) {
+            map.addSource(sourceId, {
+                type: 'geojson',
+                data: circle
+            });
+
+            map.addLayer({
+                id: layerId,
+                type: 'fill',
+                source: sourceId,
+                layout: {},
+                paint: {
+                    'fill-color': getColorBySeverity(alert.severity),
+                    'fill-opacity': 0.25
+                }
+            });
+
+            map.addLayer({
+                id: `${layerId}-outline`,
+                type: 'line',
+                source: sourceId,
+                paint: {
+                    'line-color': getColorBySeverity(alert.severity),
+                    'line-width': 2,
+                    'line-opacity': 0.6
+                }
+            });
+        }
     });
+});
 
-    // ==============================
-    // Fit map để hiển thị tất cả marker
-    // ==============================
-    if (alerts.length > 1) {
-        const bounds = new maplibregl.LngLatBounds();
-        alerts.forEach(loc => bounds.extend([loc.address.longitude, loc.address.latitude]));
-        map.fitBounds(bounds, { padding: 80 });
+
+function getColorBySeverity(severity) {
+    switch (severity) {
+        case 'low': return '#00BFFF';      // xanh dương nhạt
+        case 'medium': return '#FFD700';   // vàng
+        case 'high': return '#FFA500';     // cam
+        case 'critical': return '#FF0000'; // đỏ
+        default: return '#808080';
     }
+}
 </script>

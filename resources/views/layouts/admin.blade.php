@@ -14,6 +14,8 @@
         <!-- MapLibre CSS & JS -->
         <link href="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.css" rel="stylesheet" />
         <script src="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+
         <script>
             window.MAPTILER_KEY = "{{ env('MAPTILER_KEY') }}";
         </script>
