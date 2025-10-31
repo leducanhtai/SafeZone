@@ -7,6 +7,7 @@
 @endsection
 
 @section('content')
+<x-alert/>
 <div class="max-w-3xl mx-auto py-8">
 
     <!-- MAP nằm ngoài form để tránh xung đột nút submit -->
@@ -65,6 +66,11 @@
             <input type="hidden" name="latitude" id="latitude">
             <input type="hidden" name="longitude" id="longitude">
 
+            <label for="image">Ảnh</label>
+            <input type="file" name="image" id="image" accept="image/*">
+            <p>Ảnh hiện tại</p>
+            <img id="create-image" src="{{ asset('storage/base.png') }}" alt="Ảnh" width="150">
+
             <!-- rest of form -->
             <div class="mb-4 mt-4">
                 <label for="description" class="block text-sm font-medium text-white mb-1">Description</label>
@@ -113,45 +119,59 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function () {
+    
+        window.addEventListener('map:location-selected', (e) => {
+            const data = e.detail || {};
+            window.lastMapLocation = data;
+            const preview = document.getElementById('map-selected-preview');
+            if (preview) {
+                preview.textContent = data.formatted_address || data.address_line || 'Chưa có địa chỉ rõ ràng';
+            }
+            console.log('📍 Map event received (stored to window.lastMapLocation):', data);
+        });
+    
+        // Handler nút "Dùng" trong form
+        const useBtn = document.getElementById('use-address-btn');
+        useBtn?.addEventListener('click', () => {
+            const data = window.lastMapLocation;
+            if (!data) {
+                alert('Chưa có vị trí nào được chọn trên bản đồ. Vui lòng chọn 1 vị trí trước.');
+                return;
+            }
+    
+            // Gán vào hidden inputs (form)
+            document.getElementById('address_line').value = data.address_line || '';
+            document.getElementById('district').value = data.district || '';
+            document.getElementById('city').value = data.city || '';
+            document.getElementById('province').value = data.province || '';
+            document.getElementById('country').value = data.country || '';
+            document.getElementById('postal_code').value = data.postal_code || '';
+            document.getElementById('google_place_id').value = data.google_place_id || '';
+            document.getElementById('formatted_address').value = data.formatted_address || '';
+            document.getElementById('latitude').value = data.latitude || '';
+            document.getElementById('longitude').value = data.longitude || '';
+    
+            const display = document.getElementById('address_display');
+            if (display) display.value = data.formatted_address || data.address_line || '';
 
-    window.addEventListener('map:location-selected', (e) => {
-        const data = e.detail || {};
-        window.lastMapLocation = data;
-        const preview = document.getElementById('map-selected-preview');
-        if (preview) {
-            preview.textContent = data.formatted_address || data.address_line || 'Chưa có địa chỉ rõ ràng';
-        }
-        console.log('📍 Map event received (stored to window.lastMapLocation):', data);
+            console.log('Đã copy địa chỉ từ map vào form:', data);
+        });
     });
 
-    // Handler nút "Dùng" trong form
-    const useBtn = document.getElementById('use-address-btn');
-    useBtn?.addEventListener('click', () => {
-        const data = window.lastMapLocation;
-        if (!data) {
-            alert('Chưa có vị trí nào được chọn trên bản đồ. Vui lòng chọn 1 vị trí trước.');
-            return;
+    // script xử lí ảnh
+    document.getElementById('image').addEventListener('change', function (event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                document.getElementById('create-image').src = e.target.result;
+            }
+            reader.readAsDataURL(file);
         }
-
-        // Gán vào hidden inputs (form)
-        document.getElementById('address_line').value = data.address_line || '';
-        document.getElementById('district').value = data.district || '';
-        document.getElementById('city').value = data.city || '';
-        document.getElementById('province').value = data.province || '';
-        document.getElementById('country').value = data.country || '';
-        document.getElementById('postal_code').value = data.postal_code || '';
-        document.getElementById('google_place_id').value = data.google_place_id || '';
-        document.getElementById('formatted_address').value = data.formatted_address || '';
-        document.getElementById('latitude').value = data.latitude || '';
-        document.getElementById('longitude').value = data.longitude || '';
-
-        const display = document.getElementById('address_display');
-        if (display) display.value = data.formatted_address || data.address_line || '';
-
-        console.log('Đã copy địa chỉ từ map vào form:', data);
     });
-});
+
+
 </script>
 
 @endsection

@@ -28,6 +28,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/addresses/{id}', [AddressController::class, 'destroy'])->name('addresses.destroy');
 
     Route::get('/alerts', [AlertUserController::class, 'index'])->name('alerts.index');
+    
 });
 
 Route::middleware(['auth', IsAdmin::class])->prefix('admin')->name('admin.')->group(function () {
@@ -36,6 +37,9 @@ Route::middleware(['auth', IsAdmin::class])->prefix('admin')->name('admin.')->gr
     Route::get('/alerts', [AlertController::class, 'index'])->name('alerts.index');
     Route::get('/alerts/create', [AlertController::class, 'create'])->name('alerts.create');
     Route::post('/alerts', [AlertController::class, 'store'])->name('alerts.store');
+    Route::get('/alerts/{id}', [AlertController::class, 'show'])->name('alerts.show');
+    Route::get('/alerts/{id}/edit', [AlertController::class, 'edit'])->name('alerts.edit');
+    Route::put('/alerts/{id}', [AlertController::class, 'update'])->name('alerts.update');
 });
 
 require __DIR__.'/auth.php';

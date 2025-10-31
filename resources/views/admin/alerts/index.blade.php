@@ -78,7 +78,8 @@
                             @endif
                         </td>
                         <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-right flex flex-col sm:flex-row gap-2 justify-end">
-                            <a href="#" class="text-blue-400 hover:underline">View</a>
+                            <a href="{{ route('admin.alerts.show', $alert->id) }}" class="text-blue-400 hover:underline">View</a>
+                            <a href="{{ route('admin.alerts.edit', $alert->id) }}" class="text-green-400 hover:underline">Edit</a>
                             <button type="submit" class="text-red-400 hover:underline">Delete</button>
                         </td>
                     </tr>

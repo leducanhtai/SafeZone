@@ -28,7 +28,7 @@
     // Hiển thị các markers
     // ==============================
     alerts.forEach(alert => {
-        let iconUrl = `${base}/marker-default.png`;
+        let iconUrl = `${base}/logo.png`;
 
         if (alert.type === 'flood') {
             if (alert.severity === 'high') iconUrl = `${base}/flood-orange.png`;
@@ -59,78 +59,78 @@
         }
 
         const el = document.createElement('div');
-    el.style.width = '60px';
-    el.style.height = '60px';
-    el.style.backgroundImage = `url(${iconUrl})`;
-    el.style.backgroundSize = 'contain';
-    el.style.backgroundRepeat = 'no-repeat';
-    el.style.backgroundPosition = 'center';
-    el.style.display = 'block';
-    el.style.cursor = 'pointer';
+        el.style.width = '60px';
+        el.style.height = '60px';
+        el.style.backgroundImage = `url(${iconUrl})`;
+        el.style.backgroundSize = 'contain';
+        el.style.backgroundRepeat = 'no-repeat';
+        el.style.backgroundPosition = 'center';
+        el.style.display = 'block';
+        el.style.cursor = 'pointer';
 
-    const lng = parseFloat(alert.address.longitude);
-    const lat = parseFloat(alert.address.latitude);
+        const lng = parseFloat(alert.address.longitude);
+        const lat = parseFloat(alert.address.latitude);
 
-    new maplibregl.Marker({ element: el })
-        .setLngLat([lng, lat])
-        .setPopup(
-            new maplibregl.Popup({ offset: 25 })
-                .setHTML(`<strong>${alert.title}</strong><br>${alert.address.formatted_address}`)
-        )
-        .addTo(map);
+        new maplibregl.Marker({ element: el })
+            .setLngLat([lng, lat])
+            .setPopup(
+                new maplibregl.Popup({ offset: 25 })
+                    .setHTML(`<strong>${alert.title}</strong><br>${alert.address.formatted_address}`)
+            )
+            .addTo(map);
 
-    // =============== Vẽ vùng cảnh báo ===============
+        // =============== Vẽ vùng cảnh báo ===============
 
-    let radius = 500;
-    if (alert.severity === 'medium') radius = 800;
-    else if (alert.severity === 'high') radius = 1500;
-    else if (alert.severity === 'critical') radius = 2500;
+        let radius = 500;
+        if (alert.severity === 'medium') radius = 800;
+        else if (alert.severity === 'high') radius = 1500;
+        else if (alert.severity === 'critical') radius = 2500;
 
-    const circle = turf.circle([lng, lat], radius / 1000, { steps: 64, units: 'kilometers' });
+        const circle = turf.circle([lng, lat], radius / 1000, { steps: 64, units: 'kilometers' });
 
-    const sourceId = `alert-circle-${alert.id}`;
-    const layerId = `alert-circle-layer-${alert.id}`;
+        const sourceId = `alert-circle-${alert.id}`;
+        const layerId = `alert-circle-layer-${alert.id}`;
 
-    map.on('load', () => {
-        if (!map.getSource(sourceId)) {
-            map.addSource(sourceId, {
-                type: 'geojson',
-                data: circle
-            });
+        map.on('load', () => {
+            if (!map.getSource(sourceId)) {
+                map.addSource(sourceId, {
+                    type: 'geojson',
+                    data: circle
+                });
+    
+                map.addLayer({
+                    id: layerId,
+                    type: 'fill',
+                    source: sourceId,
+                    layout: {},
+                    paint: {
+                        'fill-color': getColorBySeverity(alert.severity),
+                        'fill-opacity': 0.25
+                    }
+                });
 
-            map.addLayer({
-                id: layerId,
-                type: 'fill',
-                source: sourceId,
-                layout: {},
-                paint: {
-                    'fill-color': getColorBySeverity(alert.severity),
-                    'fill-opacity': 0.25
-                }
-            });
-
-            map.addLayer({
-                id: `${layerId}-outline`,
-                type: 'line',
-                source: sourceId,
-                paint: {
-                    'line-color': getColorBySeverity(alert.severity),
-                    'line-width': 2,
-                    'line-opacity': 0.6
-                }
-            });
-        }
+                map.addLayer({
+                    id: `${layerId}-outline`,
+                    type: 'line',
+                    source: sourceId,
+                    paint: {
+                        'line-color': getColorBySeverity(alert.severity),
+                        'line-width': 2,
+                        'line-opacity': 0.6
+                    }
+                });
+            }
+        });
     });
-});
 
 
-function getColorBySeverity(severity) {
-    switch (severity) {
-        case 'low': return '#00BFFF';      // xanh dương nhạt
-        case 'medium': return '#FFD700';   // vàng
-        case 'high': return '#FFA500';     // cam
-        case 'critical': return '#FF0000'; // đỏ
-        default: return '#808080';
+    function getColorBySeverity(severity) {
+        switch (severity) {
+            case 'low': return '#00BFFF';      // xanh dương nhạt
+            case 'medium': return '#FFD700';   // vàng
+            case 'high': return '#FFA500';     // cam
+            case 'critical': return '#FF0000'; // đỏ
+            default: return '#808080';
+        }
     }
-}
 </script>
