@@ -133,4 +133,24 @@
             default: return '#808080';
         }
     }
+
+    // ==============================
+    // Sau khi thêm tất cả markers
+    // ==============================
+    if (alerts.length > 0) {
+        const bounds = new maplibregl.LngLatBounds();
+
+        alerts.forEach(alert => {
+            const lng = parseFloat(alert.address.longitude);
+            const lat = parseFloat(alert.address.latitude);
+            bounds.extend([lng, lat]);
+        });
+
+        map.fitBounds(bounds, {
+            padding: 100,
+            maxZoom: 13,
+            duration: 1000
+        });
+    }
+
 </script>

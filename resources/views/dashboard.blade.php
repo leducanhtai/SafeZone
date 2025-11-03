@@ -177,6 +177,8 @@
                         };
                         document.body.appendChild(windyScript);
                     </script>
+
+                    
 ```
                 {{-- 🌫️ Dashboard Glassmorphism hiện đại --}}
                 <div class="space-y-6 text-slate-200">
