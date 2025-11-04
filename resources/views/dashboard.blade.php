@@ -1,6 +1,6 @@
 <x-app-layout>
 
-    <div id="windy" class="w-full h-[70vh] rounded-lg overflow-hidden shadow-lg mt-2"></div>
+    <div id="windy" class="w-full h-[70vh] rounded-lg overflow-hidden shadow-lg mt-2 relative z-0"></div>
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
