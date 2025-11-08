@@ -55,6 +55,29 @@
         height: 100%;
         min-height: 600px;
     }
+    
+    /* Animated route */
+    @keyframes dash {
+        to {
+            stroke-dashoffset: -20;
+        }
+    }
+    
+    /* Route info card */
+    .route-info {
+        animation: slideIn 0.3s ease-out;
+    }
+    
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
 </style>
 
 <script>
@@ -239,29 +262,157 @@
                 emergencyMap.removeLayer(routePolyline);
             }
 
-            // Simple straight line route (in production, use routing API like OSRM or Google Directions)
-            routePolyline = L.polyline([
-                [startLat, startLng],
-                [endLat, endLng]
-            ], {
-                color: 'red',
-                weight: 4,
-                opacity: 0.7,
-                dashArray: '10, 10'
-            }).addTo(emergencyMap);
-
-            // Fit bounds to show entire route
-            const bounds = L.latLngBounds([[startLat, startLng], [endLat, endLng]]);
-            emergencyMap.fitBounds(bounds, { padding: [50, 50] });
-
-            // Calculate approximate distance
-            const distance = emergencyMap.distance([startLat, startLng], [endLat, endLng]) / 1000;
+            // Use OSRM routing API for real road routes
+            const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson`;
             
-            // Show route info popup
-            L.popup()
-                .setLatLng([endLat, endLng])
-                .setContent(`<strong>Route to ${shelterName}</strong><br>Distance: ~${distance.toFixed(2)} km`)
-                .openOn(emergencyMap);
+            fetch(osrmUrl)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+                        const route = data.routes[0];
+                        const coordinates = route.geometry.coordinates;
+                        
+                        // Convert coordinates from [lng, lat] to [lat, lng] for Leaflet
+                        const latlngs = coordinates.map(coord => [coord[1], coord[0]]);
+                        
+                        // Draw the route with gradient effect
+                        routePolyline = L.polyline(latlngs, {
+                            color: '#ef4444',
+                            weight: 5,
+                            opacity: 0.8,
+                            lineJoin: 'round',
+                            className: 'route-animated'
+                        }).addTo(emergencyMap);
+
+                        // Add start marker (green)
+                        L.marker([startLat, startLng], {
+                            icon: L.divIcon({
+                                className: 'custom-div-icon',
+                                html: `<div style="background-color: #10b981; width: 30px; height: 30px; border-radius: 50%; border: 3px solid white; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"><span style="color: white; font-size: 16px;">🚶</span></div>`,
+                                iconSize: [30, 30],
+                                iconAnchor: [15, 15]
+                            })
+                        }).addTo(emergencyMap).bindPopup('Start: Your Location');
+
+                        // Add end marker (red)
+                        L.marker([endLat, endLng], {
+                            icon: L.divIcon({
+                                className: 'custom-div-icon',
+                                html: `<div style="background-color: #ef4444; width: 35px; height: 35px; border-radius: 50%; border: 3px solid white; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"><span style="color: white; font-size: 18px;">🏠</span></div>`,
+                                iconSize: [35, 35],
+                                iconAnchor: [17, 17]
+                            })
+                        }).addTo(emergencyMap).bindPopup(`Destination: ${shelterName}`);
+
+                        // Fit bounds to show entire route
+                        emergencyMap.fitBounds(routePolyline.getBounds(), { padding: [50, 50] });
+
+                        // Get distance and duration
+                        const distanceKm = (route.distance / 1000).toFixed(2);
+                        const durationMin = Math.round(route.duration / 60);
+                        const durationHours = durationMin >= 60 ? `${Math.floor(durationMin / 60)}h ${durationMin % 60}m` : `${durationMin} min`;
+                        
+                        // Show route info in a custom control
+                        const routeInfo = L.control({ position: 'topright' });
+                        routeInfo.onAdd = function() {
+                            const div = L.DomUtil.create('div', 'route-info');
+                            div.style.cssText = `
+                                background: white;
+                                padding: 15px;
+                                border-radius: 10px;
+                                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                                min-width: 200px;
+                                font-family: system-ui;
+                            `;
+                            div.innerHTML = `
+                                <div style="border-bottom: 2px solid #ef4444; padding-bottom: 8px; margin-bottom: 10px;">
+                                    <strong style="color: #1f2937; font-size: 16px;">📍 Route to ${shelterName}</strong>
+                                </div>
+                                <div style="display: flex; flex-direction: column; gap: 8px;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span style="font-size: 20px;">🚗</span>
+                                        <div>
+                                            <div style="color: #6b7280; font-size: 12px;">Distance</div>
+                                            <div style="color: #1f2937; font-weight: 600; font-size: 18px;">${distanceKm} km</div>
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span style="font-size: 20px;">⏱️</span>
+                                        <div>
+                                            <div style="color: #6b7280; font-size: 12px;">Duration</div>
+                                            <div style="color: #1f2937; font-weight: 600; font-size: 18px;">${durationHours}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button onclick="this.parentElement.parentElement.remove()" style="
+                                    position: absolute;
+                                    top: 8px;
+                                    right: 8px;
+                                    background: #f3f4f6;
+                                    border: none;
+                                    border-radius: 50%;
+                                    width: 24px;
+                                    height: 24px;
+                                    cursor: pointer;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    font-size: 16px;
+                                ">×</button>
+                            `;
+                            return div;
+                        };
+                        routeInfo.addTo(emergencyMap);
+                        
+                        // Also show popup at destination
+                        L.popup()
+                            .setLatLng([endLat, endLng])
+                            .setContent(`
+                                <div class="p-2">
+                                    <strong class="text-base">${shelterName}</strong><br>
+                                    <p class="text-sm mt-1">Click route markers for details</p>
+                                </div>
+                            `)
+                            .openOn(emergencyMap);
+                    } else {
+                        // Fallback to straight line if routing fails
+                        routePolyline = L.polyline([
+                            [startLat, startLng],
+                            [endLat, endLng]
+                        ], {
+                            color: '#ef4444',
+                            weight: 4,
+                            opacity: 0.7,
+                            dashArray: '10, 10'
+                        }).addTo(emergencyMap);
+
+                        const bounds = L.latLngBounds([[startLat, startLng], [endLat, endLng]]);
+                        emergencyMap.fitBounds(bounds, { padding: [50, 50] });
+
+                        const distance = emergencyMap.distance([startLat, startLng], [endLat, endLng]) / 1000;
+                        
+                        L.popup()
+                            .setLatLng([endLat, endLng])
+                            .setContent(`<strong>Route to ${shelterName}</strong><br>Distance: ~${distance.toFixed(2)} km (straight line)`)
+                            .openOn(emergencyMap);
+                    }
+                })
+                .catch(error => {
+                    console.error('Routing error:', error);
+                    // Fallback to straight line
+                    routePolyline = L.polyline([
+                        [startLat, startLng],
+                        [endLat, endLng]
+                    ], {
+                        color: '#ef4444',
+                        weight: 4,
+                        opacity: 0.7,
+                        dashArray: '10, 10'
+                    }).addTo(emergencyMap);
+
+                    const bounds = L.latLngBounds([[startLat, startLng], [endLat, endLng]]);
+                    emergencyMap.fitBounds(bounds, { padding: [50, 50] });
+                });
         }
     });
 </script>
