@@ -37,6 +37,63 @@
             <x-map-alert :alerts="$alerts" :zoom="7" />
         </div>
 
+        <form method="GET" class="mb-6 bg-gray-100 dark:bg-gray-800 p-6 rounded-xl shadow-md flex flex-wrap gap-4 items-end">
+
+    <!-- Search -->
+    <div class="flex-1 min-w-[200px]">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tìm kiếm</label>
+        <input type="text" name="q" value="{{ request('q') }}"
+               placeholder="Nhập từ khóa..."
+               class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+    </div>
+
+    <!-- Severity -->
+    <div class="min-w-[150px]">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Độ nghiêm trọng</label>
+        <select name="severity"
+                class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 shadow-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400">
+            <option value="">Tất cả</option>
+            <option value="low" {{ request('severity')=='low' ? 'selected' : '' }}>Low</option>
+            <option value="medium" {{ request('severity')=='medium' ? 'selected' : '' }}>Medium</option>
+            <option value="high" {{ request('severity')=='high' ? 'selected' : '' }}>High</option>
+            <option value="critical" {{ request('severity')=='critical' ? 'selected' : '' }}>Critical</option>
+        </select>
+    </div>
+
+    <!-- Type -->
+    <div class="min-w-[150px]">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Loại cảnh báo</label>
+        <select name="type"
+                class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 shadow-sm focus:ring-2 focus:ring-green-400 focus:border-green-400">
+            <option value="">Tất cả</option>
+            <option value="storm" {{ request('type')=='storm' ? 'selected' : '' }}>Bão</option>
+            <option value="flood" {{ request('type')=='flood' ? 'selected' : '' }}>Lũ lụt</option>
+            <option value="fire" {{ request('type')=='fire' ? 'selected' : '' }}>Cháy rừng</option>
+        </select>
+    </div>
+
+    <!-- Date From -->
+    <div class="min-w-[150px]">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Từ ngày</label>
+        <input type="date" name="from_date" value="{{ request('from_date') }}"
+               class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+    </div>
+
+    <!-- Buttons -->
+    <div class="flex gap-2 mt-2 sm:mt-0">
+        <button type="submit"
+                class="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors">
+            Lọc
+        </button>
+        <a href="{{ route('alerts.index') }}"
+           class="px-4 py-2 bg-gray-400 text-white rounded-lg shadow hover:bg-gray-500 transition-colors">
+            Clear
+        </a>
+    </div>
+</form>
+
+
+
         <!-- ALERT LIST -->
         <div class="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-6">
 
