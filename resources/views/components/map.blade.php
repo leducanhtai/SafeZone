@@ -202,6 +202,56 @@
     }
 
     // ==============================
+    // Chọn vị trí bằng cách click trên bản đồ
+    // ==============================
+    map.on('click', async (e) => {
+      const lng = e.lngLat.lng;
+      const lat = e.lngLat.lat;
+
+      // Remove previous marker
+      if (marker) marker.remove();
+
+      // Add a marker at clicked location
+      marker = new maplibregl.Marker({ color: 'red' })
+        .setLngLat([lng, lat])
+        .addTo(map);
+
+      // Reverse geocode to get address details (if available)
+      try {
+        const reverseUrl = `https://api.maptiler.com/geocoding/${lng},${lat}.json?key=${MAPTILER_KEY}&language=vi`;
+        const response = await fetch(reverseUrl);
+        const data = await response.json();
+
+        let fullAddress = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        let feature = null;
+
+        if (data.features && data.features.length > 0) {
+          feature = data.features[0];
+          fullAddress = buildFullAddress(feature);
+          marker.setPopup(new maplibregl.Popup().setText(fullAddress));
+        } else {
+          marker.setPopup(new maplibregl.Popup().setText(fullAddress));
+        }
+
+        const payload = feature
+          ? buildFullData(feature, fullAddress, lat, lng)
+          : {
+              address_line: fullAddress,
+              formatted_address: fullAddress,
+              latitude: lat,
+              longitude: lng,
+            };
+
+        // Dispatch event so forms/listeners can use the selected location
+        window.dispatchEvent(new CustomEvent('map:location-selected', { detail: payload }));
+        window.lastMapLocation = payload;
+        console.log('📌 map:location-selected (click)', payload);
+      } catch (err) {
+        console.error('Error reverse geocoding on map click:', err);
+      }
+    });
+
+    // ==============================
     // Xây địa chỉ đầy đủ
     // ==============================
     function buildFullAddress(feature) {
