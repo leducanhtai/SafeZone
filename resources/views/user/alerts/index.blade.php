@@ -273,8 +273,7 @@
                         </div>
 
                         <div class="mt-4 flex justify-between items-center">
-                            <a href="#"
-                               onclick=""
+                            <a href="{{ route('alerts.show', $alert->id) }}"
                                class="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline text-sm font-medium">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none"
                                      viewBox="0 0 24 24" stroke="currentColor">

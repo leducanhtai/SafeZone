@@ -29,6 +29,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/alerts', [AlertUserController::class, 'index'])->name('alerts.index');
     Route::get('/alerts/load', [AlertController::class, 'loadMore'])->name('alerts.load');
+    Route::get('/alerts/{id}', [AlertUserController::class, 'show'])->name('alerts.show'); 
     
     // Emergency Routes
     Route::get('/emergency-routes', [\App\Http\Controllers\User\EmergencyRouteController::class, 'index'])->name('emergency-routes.index');

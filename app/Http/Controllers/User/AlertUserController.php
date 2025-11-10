@@ -101,6 +101,24 @@ class AlertUserController extends Controller
         'userAddresses' => $userAddresses,
     ]);
 }
+    public function show($id)
+{
+    $alert = Alert::with('address')->findOrFail($id);
+    $userAddresses = collect();
+    $user = auth()->user();
+        $userAddresses = $user->addresses()
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->get(['id', 'latitude', 'longitude']);
+    return view('user.alerts.show', [
+        'alerts' => AlertResource::collection(collect([$alert])),
+        'userAddresses' => $userAddresses,
+    ]);
+
+}
+
+
+
 
 
 
