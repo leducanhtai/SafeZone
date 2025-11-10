@@ -24,52 +24,82 @@
 
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            {{ __('Cảnh báo thiên tai') }}
+            {{ __('Disaster Alerts') }}
         </h2>
     </x-slot>
 
     <x-alert />
 
-    <div class="max-w-7xl mx-auto py-10 sm:px-6">
+    <div class="max-w-7xl mx-auto py-10 sm:px-6 lg:px-8">
         <!-- MAP -->
         <div class="h-[500px] mb-6">
+            {{-- map expects a resource collection (transformed) in $alerts --}}
             <x-map-alert :alerts="$alerts" :zoom="7" :user-addresses="$userAddresses" />
         </div>
 
-        <div class="max-w-7xl mx-auto py-10 sm:px-6">
-    <!-- 🔹 Nút lọc cấp cao -->
-    <div class="flex justify-center mb-6 gap-3">
-        <a href="{{ route('alerts.index', ['mode' => 'all']) }}"
-           class="px-5 py-2.5 rounded-xl font-medium flex items-center gap-2
-                  {{ $mode === 'all' ? 'bg-blue-600 text-white shadow-lg' : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100' }}
-                  hover:scale-[1.03] transition-all duration-150">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4"
-                 fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M3 4h18M3 12h18M3 20h18"/>
-            </svg>
-            Tất cả cảnh báo
-        </a>
+        <!-- Content -->
+        <div class="space-y-6">
+            <!-- 🔹 Nút lọc cấp cao -->
+<div class="flex justify-center mb-8 gap-4">
+    <!-- All Alerts -->
+    <a href="{{ route('alerts.index', ['mode' => 'all']) }}"
+       class="px-6 py-3 rounded-full font-semibold flex items-center gap-2 shadow-sm transition duration-300
+              {{ $mode === 'all' 
+                    ? 'bg-blue-600 text-white shadow-lg scale-105' 
+                    : 'bg-gray-800 border border-gray-700 text-gray-200 hover:bg-gray-700 hover:text-blue-400' }}">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 {{ $mode === 'all' ? 'text-white' : 'text-blue-400' }}" 
+             fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M3 5h18M3 12h18M3 19h18" />
+        </svg>
+        All Alerts
+    </a>
 
-        <a href="{{ route('alerts.index', ['mode' => 'near']) }}"
-           class="px-5 py-2.5 rounded-xl font-medium flex items-center gap-2
-                  {{ $mode === 'near' ? 'bg-green-600 text-white shadow-lg' : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100' }}
-                  hover:scale-[1.03] transition-all duration-150">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4"
-                 fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                      d="M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5 9 6.343 9 8s1.343 3 3 3z"/>
-                <path stroke-linecap="round" stroke-linejoin="round"
-                      d="M12 22s8-7.582 8-14a8 8 0 10-16 0c0 6.418 8 14 8 14z"/>
-            </svg>
-            Cảnh báo gần bạn
-        </a>
-    </div>
+    <!-- Near You -->
+    <a href="{{ route('alerts.index', ['mode' => 'near']) }}"
+       class="px-6 py-3 rounded-full font-semibold flex items-center gap-2 shadow-sm transition duration-300
+              {{ $mode === 'near' 
+                    ? 'bg-green-600 text-white shadow-lg scale-105' 
+                    : 'bg-gray-800 border border-gray-700 text-gray-200 hover:bg-gray-700 hover:text-green-400' }}">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 {{ $mode === 'near' ? 'text-white' : 'text-green-400' }}" 
+             fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 11a3 3 0 100-6 3 3 0 000 6z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 22s8-7.582 8-14a8 8 0 10-16 0c0 6.418 8 14 8 14z" />
+        </svg>
+        Near You
+    </a>
+
+    <!-- In You -->
+    <a href="{{ route('alerts.index', ['mode' => 'in']) }}"
+       class="px-6 py-3 rounded-full font-semibold flex items-center gap-2 shadow-sm transition duration-300
+              {{ $mode === 'in' 
+                    ? 'bg-red-600 text-white shadow-lg scale-105' 
+                    : 'bg-gray-800 border border-gray-700 text-gray-200 hover:bg-gray-700 hover:text-red-400' }}">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 {{ $mode === 'in' ? 'text-white' : 'text-red-400' }}" 
+             fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 11a3 3 0 100-6 3 3 0 000 6z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 22s8-7.582 8-14a8 8 0 10-16 0c0 6.418 8 14 8 14z" />
+        </svg>
+        In You
+    </a>
+</div>
+
+
+
+
+
 
 
        <form method="GET"
       class="mb-8 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-6 rounded-2xl shadow-lg space-y-4">
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <input type="hidden" name="mode" value="{{ $mode }}">
+
 
         <!-- Search -->
         <div>
@@ -80,10 +110,10 @@
                     <path stroke-linecap="round" stroke-linejoin="round"
                           d="M21 21l-4.35-4.35M16.65 10.5a6.15 6.15 0 11-12.3 0 6.15 6.15 0 0112.3 0z"/>
                 </svg>
-                Tìm kiếm
+                Search
             </label>
-            <input type="text" name="q" value="{{ request('q') }}"
-                   placeholder="Nhập từ khóa..."
+         <input type="text" name="q" value="{{ request('q') }}"
+             placeholder="Enter keywords..."
                    class="mt-1 w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 
                           text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 
                           focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-150">
@@ -98,12 +128,12 @@
                     <path stroke-linecap="round" stroke-linejoin="round"
                           d="M12 9v4m0 4h.01M4.93 19h14.14a2 2 0 001.74-3l-7.07-12a2 2 0 00-3.48 0l-7.07 12A2 2 0 004.93 19z"/>
                 </svg>
-                Độ nghiêm trọng
+                Severity
             </label>
             <select name="severity"
                     class="mt-1 w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 
                            text-gray-900 dark:text-gray-200 focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all duration-150">
-                <option value="">Tất cả</option>
+                <option value="">All</option>
                 <option value="low" {{ request('severity')=='low' ? 'selected' : '' }}>Low</option>
                 <option value="medium" {{ request('severity')=='medium' ? 'selected' : '' }}>Medium</option>
                 <option value="high" {{ request('severity')=='high' ? 'selected' : '' }}>High</option>
@@ -120,15 +150,15 @@
                     <path stroke-linecap="round" stroke-linejoin="round"
                           d="M3 15a4 4 0 010-8 5 5 0 019.58-1.19A4.5 4.5 0 0119.5 12H20a4 4 0 010 8h-7"/>
                 </svg>
-                Loại cảnh báo
+                Alert type
             </label>
             <select name="type"
                     class="mt-1 w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 
                            text-gray-900 dark:text-gray-200 focus:ring-2 focus:ring-green-400 focus:border-green-400 transition-all duration-150">
-                <option value="">Tất cả</option>
-                <option value="storm" {{ request('type')=='storm' ? 'selected' : '' }}>Bão</option>
-                <option value="flood" {{ request('type')=='flood' ? 'selected' : '' }}>Lũ lụt</option>
-                <option value="fire" {{ request('type')=='fire' ? 'selected' : '' }}>Cháy rừng</option>
+                <option value="">All</option>
+                <option value="storm" {{ request('type')=='storm' ? 'selected' : '' }}>Storm</option>
+                <option value="flood" {{ request('type')=='flood' ? 'selected' : '' }}>Flood</option>
+                <option value="fire" {{ request('type')=='fire' ? 'selected' : '' }}>Wildfire</option>
             </select>
         </div>
 
@@ -141,7 +171,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round"
                           d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                 </svg>
-                Từ ngày
+                From date
             </label>
             <input type="date" name="from_date" value="{{ request('from_date') }}"
                    class="mt-1 w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 
@@ -160,7 +190,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round"
                       d="M3 4h18M5 8h14M8 12h8m-3 4h2m-6 4h10"/>
             </svg>
-            Lọc
+            Filter
         </button>
 
         <a href="{{ route('alerts.index') }}"
@@ -172,7 +202,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round"
                       d="M6 18L18 6M6 6l12 12"/>
             </svg>
-            Xóa lọc
+            Clear filters
         </a>
     </div>
 </form>
@@ -181,16 +211,15 @@
 
 
 
-        <!-- ALERT LIST -->
-        <div class="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-6">
+            <!-- ALERT LIST -->
+            <div class="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
+                    Alert List
+                </h3>
 
-            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
-                Alert List
-            </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="alert-list">
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="alert-list">
-
-                @foreach ($alerts as $alert)
+                @foreach ($alertsPaginated as $alert)
                     <div class="rounded-xl shadow-lg p-4 flex flex-col hover:shadow-xl hover:scale-[1.02]
                         transition-all duration-300 border-l-4
                         {{ match($alert->severity) {
@@ -259,6 +288,11 @@
 
 
                 @endforeach
+
+                {{-- Pagination links --}}
+                <div class="mt-6 col-span-full">
+                    {{ $alertsPaginated->links() }}
+                </div>
 
                 <!-- TEMPLATE ALERT MỚI -->
                 <template id="alert-template">
