@@ -148,6 +148,16 @@ Provide accurate, actionable information based on the data provided.";
 
             \Log::info('Location disaster analysis', ['lat' => $lat, 'lng' => $lng, 'location' => $location]);
 
+            // Create cache key based on location and radius
+            $cacheKey = "disaster_analysis_" . md5("{$lat}_{$lng}_{$radius}");
+            
+            // Check cache first (10 minutes)
+            $cachedResult = Cache::get($cacheKey);
+            if ($cachedResult) {
+                \Log::info('Returning cached disaster analysis');
+                return response()->json($cachedResult);
+            }
+
             // Fetch real data from USGS
             $earthquakeData = $this->fetchUSGSData($lat, $lng, $radius);
             
@@ -164,30 +174,58 @@ Provide accurate, actionable information based on the data provided.";
                 throw new \Exception('Gemini API key not configured');
             }
 
-            $response = Http::withoutVerifying()
-                ->timeout(30)
-                ->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key={$apiKey}", [
-                    'contents' => [
-                        [
-                            'parts' => [
-                                ['text' => $prompt]
+            // Try to call Gemini API with retry logic
+            $analysisText = '';
+            $maxRetries = 2;
+            $retryDelay = 2; // seconds
+            
+            for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
+                try {
+                    $response = Http::withoutVerifying()
+                        ->timeout(30)
+                        ->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key={$apiKey}", [
+                            'contents' => [
+                                [
+                                    'parts' => [
+                                        ['text' => $prompt]
+                                    ]
+                                ]
                             ]
-                        ]
-                    ]
-                ]);
+                        ]);
 
-            if (!$response->successful()) {
-                \Log::error('Gemini API error', [
-                    'status' => $response->status(),
-                    'body' => $response->body()
-                ]);
-                throw new \Exception('Failed to get analysis from Gemini AI');
+                    if ($response->status() === 429) {
+                        \Log::warning("Gemini API rate limit hit, attempt {$attempt}/{$maxRetries}");
+                        if ($attempt < $maxRetries) {
+                            sleep($retryDelay * $attempt);
+                            continue;
+                        }
+                        // If all retries failed, use fallback
+                        throw new \Exception('Rate limit exceeded');
+                    }
+
+                    if (!$response->successful()) {
+                        \Log::error('Gemini API error', [
+                            'status' => $response->status(),
+                            'body' => $response->body(),
+                            'attempt' => $attempt
+                        ]);
+                        throw new \Exception('Failed to get analysis from Gemini AI');
+                    }
+
+                    $data = $response->json();
+                    $analysisText = $data['candidates'][0]['content']['parts'][0]['text'] ?? '';
+                    break; // Success, exit retry loop
+                    
+                } catch (\Exception $e) {
+                    if ($attempt === $maxRetries) {
+                        // All retries failed, use fallback analysis
+                        \Log::error('All Gemini API attempts failed', ['error' => $e->getMessage()]);
+                        $analysisText = $this->generateFallbackAnalysis($location, $earthquakeData, $nasaData);
+                    }
+                }
             }
 
-            $data = $response->json();
-            $analysisText = $data['candidates'][0]['content']['parts'][0]['text'] ?? '';
-
-            return response()->json([
+            $result = [
                 'success' => true,
                 'location' => [
                     'name' => $location,
@@ -204,7 +242,12 @@ Provide accurate, actionable information based on the data provided.";
                     'parsed_data' => $this->parseGeminiResponse($analysisText)
                 ],
                 'timestamp' => now()->toIso8601String()
-            ]);
+            ];
+            
+            // Cache the result for 10 minutes
+            Cache::put($cacheKey, $result, 600);
+            
+            return response()->json($result);
 
         } catch (\Exception $e) {
             \Log::error('Location analysis error', ['error' => $e->getMessage()]);
@@ -221,7 +264,9 @@ Provide accurate, actionable information based on the data provided.";
     private function fetchUSGSData($lat, $lng, $radius)
     {
         try {
-            $response = Http::timeout(15)->get('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson');
+            $response = Http::withoutVerifying()
+                ->timeout(15)
+                ->get('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson');
             
             if (!$response->successful()) {
                 return [];
@@ -251,10 +296,12 @@ Provide accurate, actionable information based on the data provided.";
     private function fetchNASAData($lat, $lng, $radius)
     {
         try {
-            $response = Http::timeout(15)->get('https://eonet.gsfc.nasa.gov/api/v3/events', [
-                'status' => 'open',
-                'limit' => 100
-            ]);
+            $response = Http::withoutVerifying()
+                ->timeout(15)
+                ->get('https://eonet.gsfc.nasa.gov/api/v3/events', [
+                    'status' => 'open',
+                    'limit' => 100
+                ]);
             
             if (!$response->successful()) {
                 return [];
@@ -341,6 +388,69 @@ Provide analysis in this EXACT JSON format (no markdown, no code blocks):
   \"historical_context\": \"Brief historical comparison\",
   \"forecast\": \"Short-term forecast and warnings\"
 }";
+    }
+
+    /**
+     * Generate fallback analysis when Gemini API is unavailable
+     */
+    private function generateFallbackAnalysis($location, $earthquakeData, $nasaData)
+    {
+        $eqCount = count($earthquakeData);
+        $nasaCount = count($nasaData);
+        
+        // Calculate strongest earthquake
+        $strongestMag = 0;
+        foreach ($earthquakeData as $eq) {
+            $mag = $eq['properties']['mag'] ?? 0;
+            if ($mag > $strongestMag) {
+                $strongestMag = $mag;
+            }
+        }
+        
+        // Determine risk level
+        $riskLevel = 'low';
+        if ($eqCount > 10 || $strongestMag >= 6 || $nasaCount > 5) {
+            $riskLevel = 'high';
+        } elseif ($eqCount > 5 || $strongestMag >= 4 || $nasaCount > 2) {
+            $riskLevel = 'medium';
+        }
+        
+        // Get event types
+        $eventTypes = [];
+        foreach ($nasaData as $event) {
+            $category = $event['categories'][0]['title'] ?? 'Unknown';
+            if (!in_array($category, $eventTypes)) {
+                $eventTypes[] = $category;
+            }
+        }
+        
+        $analysis = [
+            "summary" => "⚠️ Analysis generated from local data (AI service temporarily unavailable). Based on {$eqCount} earthquakes and {$nasaCount} active events in {$location}.",
+            "risk_assessment" => [
+                "overall_risk" => $riskLevel,
+                "primary_threats" => $eqCount > 0 ? ["Seismic activity detected"] : ($nasaCount > 0 ? ["Active weather events"] : ["No immediate threats"]),
+                "recommendations" => [
+                    "Monitor local news and official alerts",
+                    "Have emergency supplies ready",
+                    "Know evacuation routes in your area"
+                ]
+            ],
+            "earthquake_analysis" => [
+                "total_count" => $eqCount,
+                "strongest_magnitude" => number_format($strongestMag, 1),
+                "trend" => $eqCount > 15 ? "increasing" : ($eqCount > 5 ? "stable" : "decreasing"),
+                "risk_areas" => $strongestMag >= 5 ? ["{$location} and surrounding areas"] : []
+            ],
+            "weather_analysis" => [
+                "active_events" => $nasaCount,
+                "event_types" => $eventTypes,
+                "affected_areas" => $nasaCount > 0 ? ["{$location} region"] : []
+            ],
+            "historical_context" => "This is a snapshot of current conditions. Historical comparison unavailable in fallback mode.",
+            "forecast" => $riskLevel === 'high' ? "Stay alert and follow official guidance" : "Continue monitoring conditions"
+        ];
+        
+        return json_encode($analysis);
     }    /**
      * Parse Gemini response into structured data
      */
