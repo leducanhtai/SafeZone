@@ -34,6 +34,31 @@ class AlertUserController extends Controller
                         $lat = $addr->latitude;
                         $lng = $addr->longitude;
 
+                        $extraDistance = 1000; // 100 mét
+
+                        $sub->orWhereRaw(
+                            "(6371000 * acos(
+                                cos(radians(?)) * cos(radians(latitude)) *
+                                cos(radians(longitude) - radians(?)) +
+                                sin(radians(?)) * sin(radians(latitude))
+                            )) <= alerts.radius + ?",
+                            [$lat, $lng, $lat, $extraDistance]
+                        );
+
+                    }
+                });
+            });
+        } else {
+            $query->whereRaw('1 = 0');
+        }
+    }else if($filterMode === 'in'){
+        if ($userAddresses->isNotEmpty()) {
+            $query->whereHas('address', function ($q) use ($userAddresses) {
+                $q->where(function ($sub) use ($userAddresses) {
+                    foreach ($userAddresses as $addr) {
+                        $lat = $addr->latitude;
+                        $lng = $addr->longitude;
+
                         // Haversine tính bằng mét
                         $sub->orWhereRaw(
                             "(6371000 * acos(
@@ -63,11 +88,15 @@ class AlertUserController extends Controller
         });
     }
 
-    $alerts = AlertResource::collection($query->get());
-    // dd($userAddresses);
+    // Paginate results for listing and keep a resource collection for the map
+    $alertsPaginated = $query->paginate(12)->withQueryString();
+    $alertsForMap = AlertResource::collection($alertsPaginated);
 
     return view('user.alerts.index', [
-        'alerts' => $alerts,
+        // paginator used for rendering the list and links
+        'alertsPaginated' => $alertsPaginated,
+        // resource collection (transformed) used for the map component
+        'alerts' => $alertsForMap,
         'mode' => $filterMode,
         'userAddresses' => $userAddresses,
     ]);
