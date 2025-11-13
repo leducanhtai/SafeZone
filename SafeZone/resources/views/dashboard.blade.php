@@ -3,7 +3,7 @@
             <div class="mb-8 bg-gradient-to-br from-slate-800/40 to-slate-900/20 backdrop-blur-xl border border-slate-600/30 rounded-2xl p-8 shadow-xl">
                 <iframe
                     class="w-full rounded-2xl overflow-hidden shadow-2xl"
-                    style="height: 600px;"
+                    style="height: 600px; position: relative; z-index: 0;"
                     src="https://embed.windy.com/embed2.html?lat=15.5&lon=108.0&zoom=5&level=surface&overlay=wind&menu=&message=true&marker=&calendar=&pressure=true&type=map&location=coordinates"
                     frameborder="0"
                 ></iframe>

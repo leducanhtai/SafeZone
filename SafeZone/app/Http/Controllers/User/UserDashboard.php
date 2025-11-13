@@ -15,28 +15,22 @@ class UserDashboard extends Controller
     public function index()
     {
         // Lấy alerts theo severity
-        $criticalAlerts = AlertResource::collection(
-            Alert::with(['address', 'creator'])
-                ->where('severity', 'critical')
-                ->orderBy('created_at', 'desc')
-                ->take(5)
-                ->get()
-        );
+        $criticalAlerts = Alert::with(['address', 'creator'])
+            ->where('severity', 'critical')
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
 
-        $highAlerts = AlertResource::collection(
-            Alert::with(['address', 'creator'])
-                ->where('severity', 'high')
-                ->orderBy('created_at', 'desc')
-                ->take(5)
-                ->get()
-        );
+        $highAlerts = Alert::with(['address', 'creator'])
+            ->where('severity', 'high')
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
 
-        $recentAlerts = AlertResource::collection(
-            Alert::with(['address', 'creator'])
-                ->orderBy('created_at', 'desc')
-                ->take(10)
-                ->get()
-        );
+        $recentAlerts = Alert::with(['address', 'creator'])
+            ->orderBy('created_at', 'desc')
+            ->take(10)
+            ->get();
 
         // Thống kê
         $stats = [
