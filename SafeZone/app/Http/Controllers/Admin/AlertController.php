@@ -110,18 +110,16 @@ public function index(Request $request)
         // Broadcast to realtime server
         Http::post('http://localhost:6001/new-alert', $alert->load('address')->toArray());
 
-        // Notify users within range (chunked for memory safety). Exclude the creator.
+        // Notify all users within range (chunked for memory safety), including creator and admins
         try {
-            $creatorId = Auth()->id();
             $alertLat = $alert->address->latitude;
             $alertLng = $alert->address->longitude;
             $alertRadius = $alert->radius ?? 0;
             $extraDistance = 1000; // 1000 mét buffer
 
-            // Get users who have at least one address near the alert
+            // Get all users (including admins and creator) who have at least one address near the alert
             User::query()
                 ->whereNotNull('email')
-                ->where('id', '!=', $creatorId)
                 ->whereHas('addresses', function ($q) use ($alertLat, $alertLng, $alertRadius, $extraDistance) {
                     $q->whereNotNull('latitude')
                       ->whereNotNull('longitude')

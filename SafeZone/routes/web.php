@@ -44,6 +44,21 @@ Route::middleware('auth')->group(function () {
     Route::get('/api/disasters/dashboard', [\App\Http\Controllers\User\DisasterDataController::class, 'getDashboardData'])->name('api.disasters.dashboard');
     Route::post('/api/disasters/analyze-location', [\App\Http\Controllers\User\DisasterDataController::class, 'analyzeLocationDisasters'])->name('api.disasters.analyze-location');
     
+    // Notification API
+    Route::get('/api/notifications/unread-count', function () {
+        return response()->json([
+            'count' => Auth::user()->unreadNotifications()->count()
+        ]);
+    });
+    
+    Route::get('/api/notifications/list', function () {
+        $notifications = Auth::user()->notifications()->take(5)->get();
+        return response()->json([
+            'notifications' => $notifications,
+            'unread_count' => Auth::user()->unreadNotifications()->count()
+        ]);
+    });
+    
 });
 
 Route::middleware(['auth', IsAdmin::class])->prefix('admin')->name('admin.')->group(function () {

@@ -1,4 +1,4 @@
-<nav x-data="{ open: false }" class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-b border-slate-700/50 shadow-lg backdrop-blur-xl relative z-[9999]">
+<nav x-data="{ open: false, notificationOpen: false }" class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-b border-slate-700/50 shadow-lg backdrop-blur-xl relative z-[9999]">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
@@ -55,7 +55,101 @@
 
             <!-- Settings Dropdown -->
             @auth
-                <div class="hidden sm:flex sm:items-center sm:ms-6 relative z-50">
+                <div class="hidden sm:flex sm:items-center sm:gap-4 sm:ms-6 relative z-50">
+                <!-- Notification Bell with Dropdown -->
+                <div class="relative">
+                    <button @click="notificationOpen = !notificationOpen" class="relative inline-flex items-center p-2 text-slate-300 hover:text-cyan-400 hover:bg-slate-800/50 rounded-lg transition-all duration-200 group focus:outline-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                        <!-- Notification Badge -->
+                        @php
+                            $userNotifications = Auth::user()->notifications()->take(5)->get();
+                            $unreadCount = Auth::user()->unreadNotifications()->count();
+                        @endphp
+                        @if($unreadCount > 0)
+                            <span class="notification-badge absolute top-0 right-0 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full border-2 border-slate-900">{{ $unreadCount }}</span>
+                        @endif
+                    </button>
+
+                    <!-- Notification Dropdown -->
+                    <div x-show="notificationOpen" @click.away="notificationOpen = false" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95" class="absolute right-0 mt-2 w-96 rounded-xl shadow-2xl bg-slate-800 border border-slate-700/50 ring-1 ring-black ring-opacity-5 overflow-hidden z-[9999]" style="display: none;">
+                        <div class="py-2 max-h-96 overflow-y-auto">
+                            <div class="px-4 py-3 border-b border-slate-700/50">
+                                <h3 class="text-base font-semibold text-white">Thông báo</h3>
+                            </div>
+                            
+                            <div class="notification-dropdown-content">
+                            @forelse($userNotifications as $notification)
+                                @php
+                                    $data = $notification->data;
+                                    $alertId = $data['alert_id'] ?? null;
+                                    $severity = $data['severity'] ?? 'low';
+                                    $title = $data['title'] ?? 'Thông báo mới';
+                                    $type = $data['type'] ?? 'alert';
+                                @endphp
+                                <div class="px-4 py-3 hover:bg-slate-700/50 transition-colors duration-150 border-b border-slate-700/30 {{ $notification->read_at ? 'opacity-60' : '' }}">
+                                    <div class="flex items-start gap-3">
+                                        <div class="flex-shrink-0 mt-1">
+                                            <div class="w-10 h-10 rounded-full flex items-center justify-center
+                                                @if($severity === 'critical') bg-red-500/20
+                                                @elseif($severity === 'high') bg-orange-500/20
+                                                @elseif($severity === 'medium') bg-yellow-500/20
+                                                @else bg-blue-500/20
+                                                @endif">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 
+                                                    @if($severity === 'critical') text-red-400
+                                                    @elseif($severity === 'high') text-orange-400
+                                                    @elseif($severity === 'medium') text-yellow-400
+                                                    @else text-blue-400
+                                                    @endif" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex items-center gap-2">
+                                                <p class="text-sm font-medium text-white truncate">{{ $title }}</p>
+                                                @if(!$notification->read_at)
+                                                    <span class="flex-shrink-0 w-2 h-2 bg-cyan-400 rounded-full"></span>
+                                                @endif
+                                            </div>
+                                            <p class="text-xs text-slate-400 mt-1">
+                                                <span class="capitalize">{{ ucfirst($type) }}</span> • 
+                                                <span class="uppercase">{{ $severity }}</span>
+                                            </p>
+                                            <div class="flex items-center justify-between mt-2">
+                                                <span class="text-xs text-slate-500">{{ $notification->created_at->diffForHumans() }}</span>
+                                                @if($alertId)
+                                                    <a href="{{ route('alerts.show', $alertId) }}" class="text-xs text-cyan-400 hover:text-cyan-300 font-medium hover:underline">
+                                                        Xem chi tiết →
+                                                    </a>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="px-4 py-8 text-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 mx-auto text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                    </svg>
+                                    <p class="text-sm text-slate-400 mt-2">Không có thông báo mới</p>
+                                </div>
+                            @endforelse
+                            </div>
+                            
+                            @if($userNotifications->count() > 0)
+                                <div class="px-4 py-3 border-t border-slate-700/50">
+                                    <a href="{{ route('alerts.index') }}" class="block text-center text-sm text-cyan-400 hover:text-cyan-300 font-medium">
+                                        Xem tất cả thông báo
+                                    </a>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="relative">
                     <button @click="open = !open" class="inline-flex items-center gap-2 px-4 py-2 border border-slate-600/50 text-sm font-medium rounded-lg text-slate-200 bg-slate-800/50 hover:bg-slate-700/50 hover:border-cyan-400/50 hover:text-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 transition-all duration-200">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -188,6 +282,18 @@
             </a>
         </div>
 
+        <!-- Responsive Notification Bell -->
+        @auth
+            <div class="px-2 pt-2 pb-3 border-t border-slate-700/50">
+                <a href="{{ route('alerts.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-base font-medium transition-all duration-200 {{ request()->routeIs('alerts.index') ? 'bg-cyan-400/10 text-cyan-400 border border-cyan-400/30' : 'text-slate-300 hover:text-cyan-400 hover:bg-slate-700/50' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                    {{ __('Notifications') }}
+                </a>
+            </div>
+        @endauth
+
         <!-- Responsive Settings Options -->
         @auth
             <div class="pt-4 pb-1 border-t border-slate-700/50">
@@ -274,3 +380,344 @@
         @endauth
     </div>
 </nav>
+
+@auth
+<script>
+    // Real-time notification updates
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof io !== 'undefined' && window.socket) {
+            const userId = {{ Auth::id() }};
+            const userAddresses = @json(Auth::user()->addresses->map(function($addr) {
+                return [
+                    'lat' => $addr->latitude,
+                    'lng' => $addr->longitude
+                ];
+            }));
+
+            // Listen for new alerts
+            window.socket.on('alertCreated', function(alert) {
+                // Check if user is within alert radius
+                if (isUserNearAlert(alert, userAddresses)) {
+                    // Show toast notification immediately
+                    showToastNotification(alert);
+                    
+                    // Play notification sound
+                    playNotificationSound();
+                    
+                    // Update badge and dropdown immediately with alert data (no waiting for DB)
+                    updateBadgeAndDropdownFromAlert(alert);
+                    
+                    // Sync with database after 2 seconds to get the actual notification
+                    setTimeout(() => {
+                        updateNotificationBadge();
+                    }, 2000);
+                }
+            });
+
+            function isUserNearAlert(alert, addresses) {
+                if (!alert.address || !addresses || addresses.length === 0) return false;
+                
+                const alertLat = parseFloat(alert.address.latitude);
+                const alertLng = parseFloat(alert.address.longitude);
+                const alertRadius = (parseFloat(alert.radius) || 0) + 1000; // Add 1km buffer
+
+                return addresses.some(addr => {
+                    if (!addr.lat || !addr.lng) return false;
+                    const distance = calculateDistance(
+                        parseFloat(addr.lat), 
+                        parseFloat(addr.lng), 
+                        alertLat, 
+                        alertLng
+                    );
+                    return distance <= alertRadius;
+                });
+            }
+
+            function calculateDistance(lat1, lon1, lat2, lon2) {
+                const R = 6371000; // Earth radius in meters
+                const φ1 = lat1 * Math.PI / 180;
+                const φ2 = lat2 * Math.PI / 180;
+                const Δφ = (lat2 - lat1) * Math.PI / 180;
+                const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+                const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                         Math.cos(φ1) * Math.cos(φ2) *
+                         Math.sin(Δλ/2) * Math.sin(Δλ/2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+                return R * c;
+            }
+
+            function updateBadgeAndDropdownFromAlert(alert) {
+                // Update badge immediately (increment by 1)
+                const badge = document.querySelector('.notification-badge');
+                if (badge) {
+                    const currentCount = parseInt(badge.textContent) || 0;
+                    badge.textContent = currentCount + 1;
+                    badge.classList.remove('hidden');
+                } else {
+                    // Create badge if it doesn't exist
+                    const bellButton = document.querySelector('button[\\@click="notificationOpen = !notificationOpen"]');
+                    if (bellButton) {
+                        const newBadge = document.createElement('span');
+                        newBadge.className = 'notification-badge absolute top-0 right-0 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full border-2 border-slate-900';
+                        newBadge.textContent = '1';
+                        bellButton.appendChild(newBadge);
+                    }
+                }
+                
+                // Add new notification to dropdown immediately
+                addNotificationToDropdown({
+                    data: {
+                        alert_id: alert.id,
+                        severity: alert.severity,
+                        title: alert.title,
+                        type: alert.type
+                    },
+                    read_at: null,
+                    created_at: new Date().toISOString()
+                });
+            }
+            
+            function addNotificationToDropdown(notification) {
+                const dropdownContainer = document.querySelector('.notification-dropdown-content');
+                if (!dropdownContainer) return;
+                
+                // Remove "no notifications" message if exists
+                const emptyMessage = dropdownContainer.querySelector('.text-center');
+                if (emptyMessage) {
+                    dropdownContainer.innerHTML = '';
+                }
+                
+                const data = notification.data;
+                const alertId = data.alert_id || null;
+                const severity = data.severity || 'low';
+                const title = data.title || 'Thông báo mới';
+                const type = data.type || 'alert';
+                
+                const severityColors = {
+                    'critical': { bg: 'bg-red-500/20', text: 'text-red-400' },
+                    'high': { bg: 'bg-orange-500/20', text: 'text-orange-400' },
+                    'medium': { bg: 'bg-yellow-500/20', text: 'text-yellow-400' },
+                    'low': { bg: 'bg-blue-500/20', text: 'text-blue-400' }
+                };
+                
+                const colors = severityColors[severity] || severityColors['low'];
+                
+                const notificationHtml = `
+                    <div class="px-4 py-3 hover:bg-slate-700/50 transition-colors duration-150 border-b border-slate-700/30">
+                        <div class="flex items-start gap-3">
+                            <div class="flex-shrink-0 mt-1">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center ${colors.bg}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 ${colors.text}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2">
+                                    <p class="text-sm font-medium text-white truncate">${title}</p>
+                                    <span class="flex-shrink-0 w-2 h-2 bg-cyan-400 rounded-full"></span>
+                                </div>
+                                <p class="text-xs text-slate-400 mt-1">
+                                    <span class="capitalize">${type.charAt(0).toUpperCase() + type.slice(1)}</span> • 
+                                    <span class="uppercase">${severity}</span>
+                                </p>
+                                <div class="flex items-center justify-between mt-2">
+                                    <span class="text-xs text-slate-500">Vừa xong</span>
+                                    ${alertId ? `<a href="/alerts/${alertId}" class="text-xs text-cyan-400 hover:text-cyan-300 font-medium hover:underline">Xem chi tiết →</a>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Insert at the beginning of the dropdown
+                dropdownContainer.insertAdjacentHTML('afterbegin', notificationHtml);
+            }
+            
+            function updateNotificationBadge() {
+                // Fetch updated notification list and count
+                fetch('/api/notifications/list', {
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Update badge
+                    const badge = document.querySelector('.notification-badge');
+                    if (badge) {
+                        if (data.unread_count > 0) {
+                            badge.textContent = data.unread_count;
+                            badge.classList.remove('hidden');
+                        } else {
+                            badge.remove();
+                        }
+                    } else if (data.unread_count > 0) {
+                        // Create badge if it doesn't exist
+                        const bellButton = document.querySelector('button[\\@click="notificationOpen = !notificationOpen"]');
+                        if (bellButton) {
+                            const newBadge = document.createElement('span');
+                            newBadge.className = 'notification-badge absolute top-0 right-0 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full border-2 border-slate-900';
+                            newBadge.textContent = data.unread_count;
+                            bellButton.appendChild(newBadge);
+                        }
+                    }
+                    
+                    // Update dropdown list
+                    updateNotificationDropdown(data.notifications);
+                })
+                .catch(error => console.error('Error updating notifications:', error));
+            }
+            
+            function updateNotificationDropdown(notifications) {
+                const dropdownContainer = document.querySelector('.notification-dropdown-content');
+                if (!dropdownContainer) return;
+                
+                const severityColors = {
+                    'critical': { bg: 'bg-red-500/20', text: 'text-red-400' },
+                    'high': { bg: 'bg-orange-500/20', text: 'text-orange-400' },
+                    'medium': { bg: 'bg-yellow-500/20', text: 'text-yellow-400' },
+                    'low': { bg: 'bg-blue-500/20', text: 'text-blue-400' }
+                };
+                
+                if (notifications.length === 0) {
+                    dropdownContainer.innerHTML = `
+                        <div class="px-4 py-8 text-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 mx-auto text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                            </svg>
+                            <p class="text-sm text-slate-400 mt-2">Không có thông báo mới</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let html = '';
+                notifications.forEach(notification => {
+                    const data = notification.data;
+                    const alertId = data.alert_id || null;
+                    const severity = data.severity || 'low';
+                    const title = data.title || 'Thông báo mới';
+                    const type = data.type || 'alert';
+                    const colors = severityColors[severity] || severityColors['low'];
+                    const isUnread = !notification.read_at;
+                    const createdAt = formatTimeAgo(notification.created_at);
+                    
+                    html += `
+                        <div class="px-4 py-3 hover:bg-slate-700/50 transition-colors duration-150 border-b border-slate-700/30 ${isUnread ? '' : 'opacity-60'}">
+                            <div class="flex items-start gap-3">
+                                <div class="flex-shrink-0 mt-1">
+                                    <div class="w-10 h-10 rounded-full flex items-center justify-center ${colors.bg}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 ${colors.text}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-2">
+                                        <p class="text-sm font-medium text-white truncate">${title}</p>
+                                        ${isUnread ? '<span class="flex-shrink-0 w-2 h-2 bg-cyan-400 rounded-full"></span>' : ''}
+                                    </div>
+                                    <p class="text-xs text-slate-400 mt-1">
+                                        <span class="capitalize">${type.charAt(0).toUpperCase() + type.slice(1)}</span> • 
+                                        <span class="uppercase">${severity}</span>
+                                    </p>
+                                    <div class="flex items-center justify-between mt-2">
+                                        <span class="text-xs text-slate-500">${createdAt}</span>
+                                        ${alertId ? `<a href="/alerts/${alertId}" class="text-xs text-cyan-400 hover:text-cyan-300 font-medium hover:underline">Xem chi tiết →</a>` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                dropdownContainer.innerHTML = html;
+            }
+            
+            function formatTimeAgo(dateString) {
+                const date = new Date(dateString);
+                const now = new Date();
+                const seconds = Math.floor((now - date) / 1000);
+                
+                if (seconds < 60) return 'Vừa xong';
+                if (seconds < 3600) return Math.floor(seconds / 60) + ' phút trước';
+                if (seconds < 86400) return Math.floor(seconds / 3600) + ' giờ trước';
+                if (seconds < 604800) return Math.floor(seconds / 86400) + ' ngày trước';
+                if (seconds < 2592000) return Math.floor(seconds / 604800) + ' tuần trước';
+                return Math.floor(seconds / 2592000) + ' tháng trước';
+            }
+
+            function showToastNotification(alert) {
+                const severityColors = {
+                    'critical': 'bg-red-500',
+                    'high': 'bg-orange-500',
+                    'medium': 'bg-yellow-500',
+                    'low': 'bg-blue-500'
+                };
+                
+                const color = severityColors[alert.severity] || 'bg-blue-500';
+                
+                const toast = document.createElement('div');
+                toast.className = `fixed top-20 right-4 ${color} text-white px-6 py-4 rounded-lg shadow-2xl z-[10000] max-w-md transform transition-all duration-300 ease-in-out`;
+                toast.style.transform = 'translateX(400px)';
+                toast.innerHTML = `
+                    <div class="flex items-start gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-sm mb-1">${alert.title}</h4>
+                            <p class="text-xs opacity-90">${alert.severity.toUpperCase()} - ${alert.type}</p>
+                        </div>
+                        <button onclick="this.parentElement.parentElement.remove()" class="text-white hover:text-gray-200">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                `;
+                
+                document.body.appendChild(toast);
+                
+                // Animate in
+                setTimeout(() => {
+                    toast.style.transform = 'translateX(0)';
+                }, 10);
+                
+                // Auto remove after 5 seconds
+                setTimeout(() => {
+                    toast.style.transform = 'translateX(400px)';
+                    setTimeout(() => toast.remove(), 300);
+                }, 10000);
+            }
+
+            function playNotificationSound() {
+                // Create simple notification sound
+                try {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.frequency.value = 800;
+                    oscillator.type = 'sine';
+                    
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                    
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.5);
+                } catch (error) {
+                    console.log('Could not play notification sound:', error);
+                }
+            }
+        }
+    });
+</script>
+@endauth
