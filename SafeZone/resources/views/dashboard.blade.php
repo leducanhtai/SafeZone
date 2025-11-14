@@ -1,5 +1,6 @@
 <x-app-layout>
     <div class="min-h-screen bg-gradient-to-br from-gray-950 via-slate-900 to-gray-950">
+            
             <div class="mb-8 bg-gradient-to-br from-slate-800/40 to-slate-900/20 backdrop-blur-xl border border-slate-600/30 rounded-2xl p-8 shadow-xl">
                 <iframe
                     class="w-full rounded-2xl overflow-hidden shadow-2xl"
@@ -8,6 +9,30 @@
                     frameborder="0"
                 ></iframe>
             </div>
+            <!-- Phone Number Alert Banner -->
+            @if(auth()->user() && empty(auth()->user()->phone))
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+                    <div class="bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 rounded-xl p-4 mb-6 flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <div class="p-3 bg-amber-500/30 rounded-lg">
+                                <svg class="w-6 h-6 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-white font-semibold">Add your phone number</p>
+                                <p class="text-amber-200/70 text-sm">Receive SMS alerts for critical disasters near you</p>
+                            </div>
+                        </div>
+                        <a href="{{ route('profile.edit') }}" class="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg transition-all duration-200 flex items-center gap-2 whitespace-nowrap">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            Add Phone Number
+                        </a>
+                    </div>
+                </div>
+            @endif
             <!-- Safety Status Card below map -->
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
                 <div class="bg-gradient-to-br from-slate-800/40 to-slate-900/20 backdrop-blur-xl border border-slate-600/30 rounded-2xl p-8 shadow-xl">
@@ -73,6 +98,7 @@
                 </div>
             </div>
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+            
 
 
             <!-- Critical and High Alerts -->
