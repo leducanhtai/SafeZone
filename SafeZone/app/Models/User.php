@@ -6,6 +6,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Models\Alert;
+use App\Models\Report;
+use App\Models\CustomDatabaseNotification;
+use App\Models\Address;
+use App\Models\Rescue;
+
 
 class User extends Authenticatable
 {
@@ -57,9 +63,18 @@ class User extends Authenticatable
         return $this->hasMany(Report::class);
     }
 
-    public function notifications()
+    public function customNotifications()
     {
         return $this->hasMany(Notification::class);
+    }
+
+    /**
+     * Override Laravel's notifications() to use custom table.
+     */
+    public function notifications()
+    {
+        return $this->morphMany(CustomDatabaseNotification::class, 'notifiable')
+                    ->orderBy('created_at', 'desc');
     }
 
     public function addresses()
