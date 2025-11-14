@@ -28,6 +28,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'phone',
     ];
 
     /**
@@ -87,5 +88,30 @@ class User extends Authenticatable
         return $this->hasMany(Rescue::class);
     }
 
+    public function routeNotificationForVonage($notification)
+    {
+        if (empty($this->phone)) {
+            return null;
+        }
+        
+        // Convert Vietnamese phone format to E.164
+        // 0374169035 -> +84374169035
+        $phone = trim($this->phone);
+        
+        if (str_starts_with($phone, '0')) {
+            return '+84' . substr($phone, 1);
+        }
+        
+        if (str_starts_with($phone, '+84')) {
+            return $phone;
+        }
+        
+        if (str_starts_with($phone, '84')) {
+            return '+' . $phone;
+        }
+        
+        // Default: assume it's already valid or add +84
+        return '+84' . ltrim($phone, '+');
+    }
     
 }

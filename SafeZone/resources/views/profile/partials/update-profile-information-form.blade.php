@@ -32,6 +32,18 @@
         </div>
 
         <div>
+            <label for="phone" class="block text-sm font-medium text-slate-200 mb-2">{{ __('Phone Number') }}</label>
+            <input id="phone" name="phone" type="text" 
+                class="w-full px-4 py-3 bg-slate-800/50 border border-slate-600/50 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 focus:border-cyan-400 transition-all duration-200" 
+                value="{{ old('phone', $user->phone) }}" 
+                autocomplete="tel" 
+                placeholder="+84 123 456 789" />
+            @error('phone')
+                <p class="mt-2 text-sm text-red-400">{{ $message }}</p>
+            @enderror
+        </div>
+
+        <div>
             <label for="email" class="block text-sm font-medium text-slate-200 mb-2">{{ __('Email') }}</label>
             <input id="email" name="email" type="email" 
                 class="w-full px-4 py-3 bg-slate-800/50 border border-slate-600/50 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 focus:border-cyan-400 transition-all duration-200" 

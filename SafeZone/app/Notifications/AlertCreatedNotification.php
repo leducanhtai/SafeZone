@@ -6,8 +6,10 @@ use App\Models\Alert;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Messages\VonageMessage;
 use Illuminate\Notifications\Notification;
 use App\Channels\CustomDatabaseChannel;
+use App\Channels\VonageSmsChannel;
 
 
 class AlertCreatedNotification extends Notification implements ShouldQueue
@@ -22,8 +24,14 @@ class AlertCreatedNotification extends Notification implements ShouldQueue
 
     public function via(object $notifiable): array
     {
-        // Store a copy in DB and send an email
-        return [CustomDatabaseChannel::class, 'mail'];
+        // Always store in DB + send email; add SMS if enabled and phone exists
+        $channels = [CustomDatabaseChannel::class, 'mail'];
+        
+        if (config('services.sms.enabled') && !empty($notifiable->phone)) {
+            $channels[] = VonageSmsChannel::class;
+        }
+        
+        return $channels;
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -65,5 +73,34 @@ class AlertCreatedNotification extends Notification implements ShouldQueue
             'severity' => $this->alert->severity,
             'title' => $this->alert->title,
         ];
+    }
+
+    public function toVonage(object $notifiable): VonageMessage
+    {
+        $alert = $this->alert;
+        $type = strtoupper((string) $alert->type);
+        $sev = strtoupper((string) $alert->severity);
+        $title = (string) ($alert->title ?? 'Alert');
+        $loc = optional($alert->address)->city ?? optional($alert->address)->province ?? '';
+
+        $summary = trim("[SafeZone] {$sev} {$type}: {$title}");
+        if ($loc !== '') {
+            $summary .= " @ {$loc}";
+        }
+
+        // Keep SMS short; include quick URL if available
+        $url = url(route('disaster-monitor'));
+        $text = mb_strimwidth($summary, 0, 140, '…') . " " . $url;
+
+        // Log SMS attempt for debugging
+        \Log::info('Sending SMS via Vonage', [
+            'to' => $notifiable->routeNotificationForVonage($this),
+            'from' => config('services.vonage.sms_from'),
+            'message' => $text,
+            'vonage_key' => config('services.vonage.key') ? 'SET' : 'MISSING',
+        ]);
+
+        return (new VonageMessage)
+            ->content($text);
     }
 }
