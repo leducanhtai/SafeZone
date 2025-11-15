@@ -35,8 +35,23 @@ return [
         ],
     ],
 
+    'sms' => [
+        'enabled' => env('SMS_ENABLED', false),
+    ],
+
+    'vonage' => [
+        'key' => env('VONAGE_KEY'),
+        'secret' => env('VONAGE_SECRET'),
+        'sms_from' => env('VONAGE_SMS_FROM'),
+    ],
+
     'windy' => [
         'key' => env('WINDY_API_KEY'),
+    ],
+
+    'node_server' => [
+        'url' => env('NODE_SERVER_URL'),
+        'key' => env('NODE_SERVER_KEY'),
     ],
 
 

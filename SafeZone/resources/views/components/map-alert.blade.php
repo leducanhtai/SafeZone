@@ -1,3 +1,41 @@
+    <style>
+        /* Remove default MapLibre popup styling */
+        .maplibregl-popup-content {
+            background: transparent !important;
+            padding: 0 !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+        }
+        
+        .maplibregl-popup-tip {
+            display: none !important;
+        }
+        
+        .custom-popup .maplibregl-popup-content {
+            max-width: none !important;
+        }
+        
+        .maplibregl-popup-close-button {
+            color: #fff !important;
+            font-size: 20px !important;
+            padding: 4px 8px !important;
+            right: 4px !important;
+            top: 4px !important;
+            z-index: 10 !important;
+            background: rgba(0, 0, 0, 0.5) !important;
+            border-radius: 4px !important;
+            width: 24px !important;
+            height: 24px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        
+        .maplibregl-popup-close-button:hover {
+            background: rgba(0, 0, 0, 0.7) !important;
+        }
+    </style>
+
     <div class="relative w-full h-full">
         <div id="map" class="w-full h-full rounded-lg overflow-hidden shadow"></div>
     </div>
@@ -12,7 +50,7 @@
         : [105.8342, 21.0278];
 
     // ==============================
-    // Khởi tạo bản đồ
+    // Initialize map
     // ==============================
     const map = new maplibregl.Map({
         container: 'map',
@@ -26,12 +64,14 @@
     let base = '{{ asset("images") }}';
 
     // ==============================
-    // Hiển thị các markers
+    // Display markers
     // ==============================
     alerts.forEach(alert => {
-        let iconUrl = `${base}/logo.png`;
+        let iconUrl = `${base}/flag.png`;
+        let iconSize = '40px'; // Default smaller size for flag
 
         if (alert.type === 'flood') {
+            iconSize = '60px';
             if (alert.severity === 'high') iconUrl = `${base}/flood-orange.png`;
             else if (alert.severity === 'medium') iconUrl = `${base}/flood-yellow.png`;
             else if (alert.severity === 'low') iconUrl = `${base}/flood-blue.png`;
@@ -39,6 +79,7 @@
         }
 
         if (alert.type === 'fire') {
+            iconSize = '60px';
             if (alert.severity === 'high') iconUrl = `${base}/fire-orange.png`;
             else if (alert.severity === 'medium') iconUrl = `${base}/fire-yellow.png`;
             else if (alert.severity === 'low') iconUrl = `${base}/fire-blue.png`;
@@ -46,6 +87,7 @@
         }
 
         if (alert.type === 'earthquake') {
+            iconSize = '60px';
             if (alert.severity === 'high') iconUrl = `${base}/earthquake-orange.png`;
             else if (alert.severity === 'medium') iconUrl = `${base}/earthquake-yellow.png`;
             else if (alert.severity === 'low') iconUrl = `${base}/earthquake-blue.png`;
@@ -53,6 +95,7 @@
         }
 
         if (alert.type === 'storm') {
+            iconSize = '60px';
             if (alert.severity === 'high') iconUrl = `${base}/storm-orange.png`;
             else if (alert.severity === 'medium') iconUrl = `${base}/storm-yellow.png`;
             else if (alert.severity === 'low') iconUrl = `${base}/storm-blue.png`;
@@ -60,8 +103,8 @@
         }
 
         const el = document.createElement('div');
-        el.style.width = '60px';
-        el.style.height = '60px';
+        el.style.width = iconSize;
+        el.style.height = iconSize;
         el.style.backgroundImage = `url(${iconUrl})`;
         el.style.backgroundSize = 'contain';
         el.style.backgroundRepeat = 'no-repeat';
@@ -76,23 +119,47 @@
             ? `{{ asset('storage') }}/${alert.image_path}` 
             : `{{ asset('images') }}/${alert.image_path}`;
 
-        const detailUrl = `/admin/alerts/${alert.id}`;
+        const detailUrl = {{ $isAdmin ? '`/admin/alerts/${alert.id}`' : '`/alerts/${alert.id}`' }};
         new maplibregl.Marker({ element: el })
             .setLngLat([lng, lat])
             .setPopup(
-                new maplibregl.Popup({ offset: 25 })
+                new maplibregl.Popup({ offset: 25, className: 'custom-popup' })
                     .setHTML(`
-                        <div style="max-width: 250px;">
-                            <h3 style="font-weight: 600; margin-bottom: 6px;">${alert.title}</h3>
-                            <img src="${imageUrl}" alt="Alert Image" style="width: 100%; height: 130px; object-fit: cover; border-radius: 6px; margin-bottom: 6px;">
-                            <p style="margin: 0;"><strong>Loại:</strong> ${alert.type}</p>
-                            <p style="margin: 0;"><strong>Mức độ:</strong> ${alert.severity}</p>
-                            <p style="margin: 0;"><strong>Bán kính:</strong> ${alert.radius ? alert.radius + ' m' : '500 m'}</p>
-                            <p style="margin: 0;"><strong>Địa chỉ:</strong> ${alert.address.formatted_address}</p>
-                            <div style="margin-top: 8px; text-align: center;">
+                        <div style="max-width: 280px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 12px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+                            <!-- Image -->
+                            <div style="position: relative; width: 100%; height: 140px; overflow: hidden;">
+                                <img src="${imageUrl}" alt="Alert Image" style="width: 100%; height: 100%; object-fit: cover;">
+                                <div style="position: absolute; top: 8px; right: 8px; padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 700; text-transform: uppercase; backdrop-filter: blur(8px);
+                                    ${alert.severity === 'critical' ? 'background: rgba(239, 68, 68, 0.9); color: #fff;' : 
+                                      alert.severity === 'high' ? 'background: rgba(249, 115, 22, 0.9); color: #fff;' : 
+                                      alert.severity === 'medium' ? 'background: rgba(234, 179, 8, 0.9); color: #fff;' : 
+                                      'background: rgba(6, 182, 212, 0.9); color: #fff;'}">
+                                    ${alert.severity}
+                                </div>
+                            </div>
+                            
+                            <!-- Content -->
+                            <div style="padding: 12px;">
+                                <h3 style="font-size: 15px; font-weight: 700; color: #f1f5f9; margin: 0 0 8px 0; line-height: 1.3;">${alert.title}</h3>
+                                
+                                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                                    <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #94a3b8; background: rgba(51, 65, 85, 0.5); padding: 3px 8px; border-radius: 4px;">
+                                        <svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg>
+                                        ${alert.type}
+                                    </span>
+                                    <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #94a3b8; background: rgba(51, 65, 85, 0.5); padding: 3px 8px; border-radius: 4px;">
+                                        <svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
+                                        ${alert.radius || '500'} m
+                                    </span>
+                                </div>
+                                
+                                <p style="font-size: 11px; color: #cbd5e1; margin: 0 0 10px 0; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                    ${alert.address.formatted_address}
+                                </p>
+                                
                                 <a href="${detailUrl}" 
-                                    style="display: inline-block; background-color: #2563eb; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none;">
-                                    Xem chi tiết
+                                    style="display: block; text-align: center; background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); color: white; padding: 8px 16px; border-radius: 8px; text-decoration: none; font-size: 12px; font-weight: 600; transition: all 0.2s; box-shadow: 0 2px 8px rgba(6, 182, 212, 0.3);">
+                                    View Details →
                                 </a>
                             </div>
                         </div>
@@ -100,7 +167,7 @@
             )
             .addTo(map);
 
-        // =============== Vẽ vùng cảnh báo ===============
+        // =============== Draw alert zone ===============
 
         let radius = alert.radius ? parseFloat(alert.radius) : 500;
 
@@ -142,7 +209,7 @@
     });
 
     // ==============================
-    // Hiển thị vị trí người dùng
+    // Display user location
     // ==============================
     if (userAddresses && userAddresses.length > 0) {
         userAddresses.forEach(addr => {
@@ -159,16 +226,16 @@
 
     function getColorBySeverity(severity) {
         switch (severity) {
-            case 'low': return '#00BFFF';      // xanh dương nhạt
-            case 'medium': return '#FFD700';   // vàng
-            case 'high': return '#FFA500';     // cam
-            case 'critical': return '#FF0000'; // đỏ
-            default: return '#808080';         // xám
+            case 'low': return '#00BFFF';      // light blue
+            case 'medium': return '#FFD700';   // yellow
+            case 'high': return '#FFA500';     // orange
+            case 'critical': return '#FF0000'; // red
+            default: return '#808080';         // gray
         }
     }
 
     // ==============================
-    // Sau khi thêm tất cả markers
+    // After adding all markers
     // ==============================
     if (alerts.length > 0) {
         const bounds = new maplibregl.LngLatBounds();
@@ -187,137 +254,254 @@
     }
 
     // ==============================
-    // Hàm thêm alert mới vào bản đồ (Realtime)
+    // Function to add new alert to map (Realtime)
     // ==============================
     function addAlertToMap(alert) {
-        console.log("🗺️ Thêm alert mới vào bản đồ:", alert);
+        console.log("🗺️ Adding new alert to map:", alert);
         if (!alert.address) return;
 
         const lng = parseFloat(alert.address.longitude);
         const lat = parseFloat(alert.address.latitude);
         const base = '{{ asset("images") }}';
 
-        // === Chọn icon tương tự logic cũ ===
-        let iconUrl = `${base}/logo.png`;
+        // === Select icon similar to old logic ===
+        let iconUrl = `${base}/flag.png`;
+        let iconSize = '40px'; // Default smaller size for flag
 
         if (alert.type === 'flood') {
+            iconSize = '60px';
             if (alert.severity === 'high') iconUrl = `${base}/flood-orange.png`;
             else if (alert.severity === 'medium') iconUrl = `${base}/flood-yellow.png`;
             else if (alert.severity === 'low') iconUrl = `${base}/flood-blue.png`;
             else if (alert.severity === 'critical') iconUrl = `${base}/flood-red.png`;
         } else if (alert.type === 'fire') {
+            iconSize = '60px';
             if (alert.severity === 'high') iconUrl = `${base}/fire-orange.png`;
             else if (alert.severity === 'medium') iconUrl = `${base}/fire-yellow.png`;
             else if (alert.severity === 'low') iconUrl = `${base}/fire-blue.png`;
             else if (alert.severity === 'critical') iconUrl = `${base}/fire-red.png`;
         } else if (alert.type === 'storm') {
+            iconSize = '60px';
             if (alert.severity === 'high') iconUrl = `${base}/storm-orange.png`;
             else if (alert.severity === 'medium') iconUrl = `${base}/storm-yellow.png`;
             else if (alert.severity === 'low') iconUrl = `${base}/storm-blue.png`;
             else if (alert.severity === 'critical') iconUrl = `${base}/storm-red.png`;
         } else if (alert.type === 'earthquake') {
+            iconSize = '60px';
             if (alert.severity === 'high') iconUrl = `${base}/earthquake-orange.png`;
             else if (alert.severity === 'medium') iconUrl = `${base}/earthquake-yellow.png`;
             else if (alert.severity === 'low') iconUrl = `${base}/earthquake-blue.png`;
             else if (alert.severity === 'critical') iconUrl = `${base}/earthquake-red.png`;
         }
 
+        // === Create marker with pulse animation ===
         const el = document.createElement('div');
-        el.style.width = '60px';
-        el.style.height = '60px';
+        el.style.width = iconSize;
+        el.style.height = iconSize;
         el.style.backgroundImage = `url(${iconUrl})`;
         el.style.backgroundSize = 'contain';
         el.style.backgroundRepeat = 'no-repeat';
         el.style.backgroundPosition = 'center';
         el.style.cursor = 'pointer';
+        el.style.position = 'relative';
+        el.style.animation = 'markerPulse 2s ease-in-out 3';
+        
+        // Add pulse animation keyframes if not exists
+        if (!document.getElementById('marker-pulse-style')) {
+            const style = document.createElement('style');
+            style.id = 'marker-pulse-style';
+            style.textContent = `
+                @keyframes markerPulse {
+                    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0 transparent); }
+                    50% { transform: scale(1.15); filter: drop-shadow(0 0 8px rgba(6, 182, 212, 0.8)); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
 
         const imageUrl = alert.image_path 
             ? `{{ asset('storage') }}/${alert.image_path}` 
             : `{{ asset('images') }}/${alert.image_path}`;
 
-        const detailUrl = `/admin/alerts/${alert.id}`;
+        const detailUrl = {{ $isAdmin ? '`/admin/alerts/${alert.id}`' : '`/alerts/${alert.id}`' }};
 
-        // === Tạo marker mới ===
-        new maplibregl.Marker({ element: el })
+        // === Create new marker with enhanced popup ===
+        const marker = new maplibregl.Marker({ element: el })
             .setLngLat([lng, lat])
             .setPopup(
-                new maplibregl.Popup({ offset: 25 })
+                new maplibregl.Popup({ offset: 25, className: 'custom-popup' })
                     .setHTML(`
-                        <div style="max-width: 250px;">
-                            <h3 style="font-weight: 600; margin-bottom: 6px;">${alert.title}</h3>
-                            <img src="${imageUrl}" alt="Alert Image" style="width: 100%; height: 130px; object-fit: cover; border-radius: 6px; margin-bottom: 6px;">
-                            <p style="margin: 0;"><strong>Loại:</strong> ${alert.type}</p>
-                            <p style="margin: 0;"><strong>Mức độ:</strong> ${alert.severity}</p>
-                            <p style="margin: 0;"><strong>Bán kính:</strong> ${alert.radius ? alert.radius + ' m' : '500 m'}</p>
-                            <p style="margin: 0;"><strong>Địa chỉ:</strong> ${alert.address.formatted_address}</p>
-                            <div style="margin-top: 8px; text-align: center;">
+                        <div style="max-width: 280px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 12px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.3); border: 2px solid rgba(6, 182, 212, 0.5);">
+                            <!-- NEW Badge -->
+                            <div style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); color: white; padding: 4px 12px; border-radius: 12px; font-size: 10px; font-weight: 800; z-index: 10; box-shadow: 0 4px 12px rgba(6, 182, 212, 0.4); animation: badgePulse 1.5s ease-in-out infinite;">
+                                🆕 NEW ALERT
+                            </div>
+                            
+                            <!-- Image -->
+                            <div style="position: relative; width: 100%; height: 140px; overflow: hidden;">
+                                <img src="${imageUrl}" alt="Alert Image" style="width: 100%; height: 100%; object-fit: cover;">
+                                <div style="position: absolute; top: 8px; right: 8px; padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 700; text-transform: uppercase; backdrop-filter: blur(8px);
+                                    ${alert.severity === 'critical' ? 'background: rgba(239, 68, 68, 0.9); color: #fff;' : 
+                                      alert.severity === 'high' ? 'background: rgba(249, 115, 22, 0.9); color: #fff;' : 
+                                      alert.severity === 'medium' ? 'background: rgba(234, 179, 8, 0.9); color: #fff;' : 
+                                      'background: rgba(6, 182, 212, 0.9); color: #fff;'}">
+                                    ${alert.severity}
+                                </div>
+                            </div>
+                            
+                            <!-- Content -->
+                            <div style="padding: 12px;">
+                                <h3 style="font-size: 15px; font-weight: 700; color: #f1f5f9; margin: 0 0 8px 0; line-height: 1.3;">${alert.title}</h3>
+                                
+                                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                                    <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #94a3b8; background: rgba(51, 65, 85, 0.5); padding: 3px 8px; border-radius: 4px;">
+                                        <svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg>
+                                        ${alert.type}
+                                    </span>
+                                    <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #94a3b8; background: rgba(51, 65, 85, 0.5); padding: 3px 8px; border-radius: 4px;">
+                                        <svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
+                                        ${alert.radius || '500'} m
+                                    </span>
+                                </div>
+                                
+                                <p style="font-size: 11px; color: #cbd5e1; margin: 0 0 10px 0; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                    ${alert.address.formatted_address}
+                                </p>
+                                
                                 <a href="${detailUrl}" 
-                                    style="display: inline-block; background-color: #2563eb; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none;">
-                                    Xem chi tiết
+                                    style="display: block; text-align: center; background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); color: white; padding: 8px 16px; border-radius: 8px; text-decoration: none; font-size: 12px; font-weight: 600; transition: all 0.2s; box-shadow: 0 2px 8px rgba(6, 182, 212, 0.3);">
+                                    View Details →
                                 </a>
                             </div>
                         </div>
+                        <style>
+                            @keyframes badgePulse {
+                                0%, 100% { transform: translateX(-50%) scale(1); }
+                                50% { transform: translateX(-50%) scale(1.05); }
+                            }
+                        </style>
                     `)
             )
             .addTo(map);
 
-        // === Vẽ vùng tròn bán kính ===
+        // === Draw animated radius circle zone ===
         const radius = alert.radius ? parseFloat(alert.radius) : 500;
         const circle = turf.circle([lng, lat], radius / 1000, { steps: 64, units: 'kilometers' });
 
         const sourceId = `alert-circle-${alert.id}`;
         const layerId = `alert-circle-layer-${alert.id}`;
+        const pulseLayerId = `alert-circle-pulse-${alert.id}`;
 
-        // Nếu map đã load xong, thêm vùng vào luôn
+        // If map already loaded, add zone immediately
         if (map.loaded()) {
             if (!map.getSource(sourceId)) {
                 map.addSource(sourceId, { type: 'geojson', data: circle });
+                
+                // Main fill layer with higher initial opacity
                 map.addLayer({
                     id: layerId,
                     type: 'fill',
                     source: sourceId,
                     paint: {
                         'fill-color': getColorBySeverity(alert.severity),
-                        'fill-opacity': 0.25
+                        'fill-opacity': 0.35
                     }
                 });
+
+                // Animated outline with pulsing effect
                 map.addLayer({
                     id: `${layerId}-outline`,
                     type: 'line',
                     source: sourceId,
                     paint: {
                         'line-color': getColorBySeverity(alert.severity),
-                        'line-width': 2,
-                        'line-opacity': 0.6
+                        'line-width': 3,
+                        'line-opacity': 1
                     }
                 });
+
+                // Animate the new alert zone
+                let pulseCount = 0;
+                const pulseInterval = setInterval(() => {
+                    pulseCount++;
+                    const progress = (pulseCount % 20) / 20;
+                    const opacity = 0.35 + (Math.sin(progress * Math.PI * 2) * 0.15);
+                    const lineWidth = 3 + (Math.sin(progress * Math.PI * 2) * 1);
+                    
+                    if (map.getLayer(layerId)) {
+                        map.setPaintProperty(layerId, 'fill-opacity', opacity);
+                        map.setPaintProperty(`${layerId}-outline`, 'line-width', lineWidth);
+                    }
+                    
+                    // Stop animation after 10 seconds
+                    if (pulseCount >= 200) {
+                        clearInterval(pulseInterval);
+                        // Fade to normal opacity
+                        if (map.getLayer(layerId)) {
+                            map.setPaintProperty(layerId, 'fill-opacity', 0.25);
+                            map.setPaintProperty(`${layerId}-outline`, 'line-width', 2);
+                        }
+                    }
+                }, 50);
             }
         } else {
             map.on('load', () => {
                 if (!map.getSource(sourceId)) {
                     map.addSource(sourceId, { type: 'geojson', data: circle });
+                    
                     map.addLayer({
                         id: layerId,
                         type: 'fill',
                         source: sourceId,
                         paint: {
                             'fill-color': getColorBySeverity(alert.severity),
-                            'fill-opacity': 0.25
+                            'fill-opacity': 0.35
                         }
                     });
+                    
                     map.addLayer({
                         id: `${layerId}-outline`,
                         type: 'line',
                         source: sourceId,
                         paint: {
                             'line-color': getColorBySeverity(alert.severity),
-                            'line-width': 2,
-                            'line-opacity': 0.6
+                            'line-width': 3,
+                            'line-opacity': 1
                         }
                     });
+
+                    // Animate
+                    let pulseCount = 0;
+                    const pulseInterval = setInterval(() => {
+                        pulseCount++;
+                        const progress = (pulseCount % 20) / 20;
+                        const opacity = 0.35 + (Math.sin(progress * Math.PI * 2) * 0.15);
+                        const lineWidth = 3 + (Math.sin(progress * Math.PI * 2) * 1);
+                        
+                        if (map.getLayer(layerId)) {
+                            map.setPaintProperty(layerId, 'fill-opacity', opacity);
+                            map.setPaintProperty(`${layerId}-outline`, 'line-width', lineWidth);
+                        }
+                        
+                        if (pulseCount >= 200) {
+                            clearInterval(pulseInterval);
+                            if (map.getLayer(layerId)) {
+                                map.setPaintProperty(layerId, 'fill-opacity', 0.25);
+                                map.setPaintProperty(`${layerId}-outline`, 'line-width', 2);
+                            }
+                        }
+                    }, 50);
                 }
             });
         }
+
+        // Pan map to new alert
+        map.flyTo({
+            center: [lng, lat],
+            zoom: Math.max(map.getZoom(), 12),
+            duration: 2000,
+            essential: true
+        });
     }
     window.addAlertToMap = addAlertToMap;
 </script>
