@@ -679,3 +679,9 @@ For any inquiries or support, please contact:
 Made with ❤️ for safer communities
 
 </details>
+
+---
+
+## 🌐 Live Demo
+
+**Access the live application:** [http://157.173.127.217:8080/](http://157.173.127.217:8080/)
